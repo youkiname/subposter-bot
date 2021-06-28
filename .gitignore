@@ -1,0 +1,8 @@
+.idea/
+__pycache__/
+env/
+app-error.log
+app.log
+nohup.out
+config.py
+app_log.txt
