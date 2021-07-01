@@ -26,17 +26,4 @@ def send_channels_list(msg: Message):
 @exception_handler
 @admin_required
 def add_new_channel(msg: Message):
-    try:
-        text_data = msg.text.split(' ')
-        channel_id = int(text_data[1])
-        title = text_data[2]
-    except (ValueError, IndexError):
-        bot.send_message(msg.chat.id, "Канал добавляется по шаблону:\n"
-                                      "/add_new_channel <id> <title>\n"
-                                      "Где <id> - число, которое можно получить командой "
-                                      "/get_id (добавив перед этим бота в канал)\n"
-                                      "<title> - название канала")
-    else:
-        channels.add_new(channel_id, title)
-        bot.send_message(msg.chat.id, f"Канал {title} успешно добавлен.\n"
-                                      f"/channels - список каналов.")
+    channels.process_channel_addition(msg)

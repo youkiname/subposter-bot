@@ -5,12 +5,15 @@ from models import User, PostData, Channel, MediaTypes, PostDataMedia, Post
 import html
 
 
-def start_post_creating(user: User):
+def start_post_creating(msg: types.Message):
+    user = users.get_or_create_user(msg.from_user)
     user.state = users.States.CHANNEL_CHOOSING
     user.save()
+    bot.send_message(msg.chat.id, "Начал создание поста. Выбери канал.",
+                     reply_markup=keyboards.get_channels())
 
 
-def choose_channel(msg: types.Message, user: User):
+def try_choose_channel(msg: types.Message, user: User):
     channel = Channel.get_or_none(title=msg.text)
     if channel is None:
         bot.send_message(msg.chat.id, "Такой канал не зарегистрирован.\n"
@@ -63,6 +66,7 @@ def try_send_post(msg: types.Message, user: User):
 
 
 def try_send_preview(msg: types.Message, user: User):
+    """Preview is a post without keyboard. Creator can check post appearance before sending."""
     post_data = PostData.get(PostData.creator_id == user.id)
     if __notify_about_post_data_readiness(msg.chat.id, post_data):
         return
@@ -107,11 +111,13 @@ def __notify_about_post_data_readiness(chat_id: int, post_data: PostData) -> boo
 
 
 def __is_post_data_valid(post_data: PostData) -> bool:
-    """:returns True if post_data is valid to sending."""
+    """:returns True if post_data is valid to sending.
+       If post data type was initialized User already send allowed media. This is enough to create post."""
     return post_data.type is not None
 
 
 def __apply_entities(text: str, entities: list) -> str:
+    """Apply telegram native text formatting. Converts entities to html tags."""
     if not entities:
         return text
 
@@ -149,6 +155,7 @@ def __replace_text(post_data: PostData, msg: types.Message):
 
 
 def __replace_existing_media_data(post_data: PostData, msg: types.Message):
+    """User can send another photo while post creating. Caption will be saved, but post will get new image."""
     __remove_media_data(post_data)
     if msg.content_type == MediaTypes.photo:
         __attach_photo_to_post(post_data, msg.photo[-1].file_id)
