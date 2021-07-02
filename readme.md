@@ -22,7 +22,6 @@ python start.py
 ```
 
 # TODO:
-- Update users rating after applying vote.
 - User posts amount during all time and in all channels
 - Changing users posts limit
 - Changing users rating
