@@ -1,6 +1,6 @@
 from telebot.types import CallbackQuery
 from bot import bot
-from bot.controllers import keyboards
+from bot.controllers import keyboards, users
 from models import Vote, VoteTypes
 
 
@@ -16,36 +16,56 @@ def __get_dislikes_count(channel_id: int, post_id: int) -> int:
     return __get_votes_count(channel_id, post_id, VoteTypes.dislike)
 
 
-def __update_vote(channel_id: int, post_id: int, user_id: int, new_vote_type: int) -> bool:
-    """ Saves new vote to DB or update existed.
-        :returns True if vote update is successful
-                False if vote_type matches with existed"""
-    current_vote = Vote.get_or_none(Vote.user_id == user_id,
-                                    Vote.channel_id == channel_id,
-                                    Vote.post_id == post_id)
-    if current_vote is None:
-        Vote(user_id=user_id, channel_id=channel_id, post_id=post_id, type=new_vote_type).save()
-        return True
-    elif new_vote_type == current_vote.type:
-        return False
-    current_vote.type = new_vote_type
-    current_vote.save()
-    return True
-
-
-def process_vote(call: CallbackQuery):
-    new_vote = int(call.data)
-    channel_id = call.message.chat.id
-    post_id = call.message.message_id
-    user_id = call.from_user.id
-
-    if not __update_vote(channel_id, post_id, user_id, new_vote):
-        bot.answer_callback_query(call.id, f"Already {VoteTypes.to_text(new_vote)}",
-                                  cache_time=2)
+def __update_post_creator_rating(previous_vote: int, new_vote: int, user_id: int):
+    if previous_vote is None:
+        if new_vote == VoteTypes.like:
+            users.try_change_rating(user_id, offset=1)
+        else:
+            users.try_change_rating(user_id, offset=-1)
         return
-    bot.answer_callback_query(call.id, "Success", cache_time=5)
 
+    if previous_vote == VoteTypes.like and new_vote == VoteTypes.dislike:
+        users.try_change_rating(user_id, offset=-2)
+        return
+    if previous_vote == VoteTypes.dislike and new_vote == VoteTypes.like:
+        users.try_change_rating(user_id, offset=2)
+
+
+def __update_post_keyboard(channel_id: int, post_id: int):
     likes_count = __get_likes_count(channel_id, post_id)
     dislikes_count = __get_dislikes_count(channel_id, post_id)
     keyboard = keyboards.get_post_keyboard(likes_count, dislikes_count)
     bot.edit_message_reply_markup(channel_id, post_id, reply_markup=keyboard)
+
+
+def process_vote(call: CallbackQuery):
+    user_id = call.from_user.id
+    channel_id = call.message.chat.id
+    post_id = call.message.message_id
+    new_vote_type = int(call.data)
+
+    new_vote = Vote(user_id=user_id,
+                    channel_id=channel_id,
+                    post_id=post_id,
+                    type=new_vote_type)
+
+    previous_vote = Vote.get_or_none(user_id=user_id,
+                                     channel_id=channel_id,
+                                     post_id=post_id)
+    if previous_vote is None:
+        new_vote.save()
+        bot.answer_callback_query(call.id, "Success", cache_time=5)
+        return
+
+    if previous_vote.type == new_vote.type:
+        bot.answer_callback_query(call.id, f"Already {VoteTypes.to_text(new_vote.type)}",
+                                  cache_time=2)
+        return False
+
+    __update_post_creator_rating(previous_vote.type, new_vote.type, user_id)
+    previous_vote.type = new_vote.type
+    previous_vote.save()
+
+    __update_post_keyboard(channel_id, post_id)
+
+    bot.answer_callback_query(call.id, "Success", cache_time=5)

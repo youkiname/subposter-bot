@@ -140,6 +140,13 @@ def get_dislikes_amount_in_all_channels(user_id: int) -> dict:
     return __get_votes_amount_in_all_channels(user_id, VoteTypes.like)
 
 
+def try_change_rating(user_id: int, offset: int):
+    user = User.get_or_none(id=user_id)
+    if user:
+        user.rating += offset
+        user.save()
+
+
 def clear_state(user_id: int):
     user = User.get_by_id(user_id)
     user.state = States.FREE

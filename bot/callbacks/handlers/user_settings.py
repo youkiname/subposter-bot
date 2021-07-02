@@ -1,7 +1,7 @@
-from bot import bot, exception_handler
+from bot import bot
 from telebot.types import CallbackQuery
 from bot.callbacks.controllers import user_settings
-from bot.callbacks import CallbackCommands
+from bot.callbacks import CallbackCommands, callback_exception_handler
 
 
 def __is_sign_change_command(call: CallbackQuery):
@@ -9,7 +9,7 @@ def __is_sign_change_command(call: CallbackQuery):
 
 
 @bot.callback_query_handler(func=__is_sign_change_command)
-@exception_handler
+@callback_exception_handler
 def sign_change_handler(call: CallbackQuery):
     bot.answer_callback_query(call.id)
     user_settings.process_sign_change(call)
