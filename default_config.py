@@ -14,9 +14,6 @@ class Configuration:
     DB_PORT = ""
     DB_NAME = ""
 
-    IMAGES_PATH = "./images"
-    TEMP_THUMB_PATH = "./thumbs"
-
     SUPER_ADMIN_ID = None
     EXCEPTION_LOG_CHAT_ID = None
     LOG_CHAT_ID = None
