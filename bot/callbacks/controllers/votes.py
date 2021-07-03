@@ -16,18 +16,18 @@ def __get_dislikes_count(channel_id: int, post_id: int) -> int:
     return __get_votes_count(channel_id, post_id, VoteTypes.dislike)
 
 
-def __update_post_creator_rating(previous_vote: int, new_vote: int, user_id: int):
+def __update_post_creator_rating(previous_vote: Vote, new_vote: Vote, user_id: int):
     if previous_vote is None:
-        if new_vote == VoteTypes.like:
+        if new_vote.type == VoteTypes.like:
             users.try_change_rating(user_id, offset=1)
         else:
             users.try_change_rating(user_id, offset=-1)
         return
 
-    if previous_vote == VoteTypes.like and new_vote == VoteTypes.dislike:
+    if previous_vote.type == VoteTypes.like and new_vote.type == VoteTypes.dislike:
         users.try_change_rating(user_id, offset=-2)
         return
-    if previous_vote == VoteTypes.dislike and new_vote == VoteTypes.like:
+    if previous_vote.type == VoteTypes.dislike and new_vote.type == VoteTypes.like:
         users.try_change_rating(user_id, offset=2)
 
 
@@ -52,19 +52,19 @@ def process_vote(call: CallbackQuery):
     previous_vote = Vote.get_or_none(user_id=user_id,
                                      channel_id=channel_id,
                                      post_id=post_id)
-    if previous_vote is None:
-        new_vote.save()
-        bot.answer_callback_query(call.id, "Success", cache_time=5)
-        return
 
-    if previous_vote.type == new_vote.type:
+    if previous_vote is not None and previous_vote.type == new_vote.type:
         bot.answer_callback_query(call.id, f"Already {VoteTypes.to_text(new_vote.type)}",
                                   cache_time=2)
-        return False
+        return
 
-    __update_post_creator_rating(previous_vote.type, new_vote.type, user_id)
-    previous_vote.type = new_vote.type
-    previous_vote.save()
+    __update_post_creator_rating(previous_vote, new_vote, user_id)
+
+    if previous_vote is None:
+        new_vote.save()
+    else:
+        previous_vote.type = new_vote.type
+        previous_vote.save()
 
     __update_post_keyboard(channel_id, post_id)
 
