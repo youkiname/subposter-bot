@@ -13,6 +13,8 @@ class Configuration:
     DB_HOST = ""
     DB_PORT = ""
     DB_NAME = ""
+    DB_USER = ""
+    DB_PASSWORD = ""
 
     SUPER_ADMIN_ID = None
     EXCEPTION_LOG_CHAT_ID = None
