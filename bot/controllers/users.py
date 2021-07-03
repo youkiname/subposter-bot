@@ -1,4 +1,4 @@
-from models import Admin, User, PostData, UserSettings, UsersPostsLimit, Post, Channel, Vote, VoteTypes
+from models import Admin, User, PostData, UserSettings, CustomUserPostsLimit, Post, Channel, Vote, VoteTypes
 from telebot import types
 from datetime import datetime
 from config import config
@@ -86,12 +86,6 @@ def is_superuser(user_id: int) -> bool:
 def is_user_creating_post(msg: types.Message) -> bool:
     user = get_or_create_user(msg.from_user)
     return user.state in [States.POST_CREATING, States.CHANNEL_CHOOSING]
-
-
-def get_or_create_user_post_limit(user_id: int, channel_id: int) -> UsersPostsLimit:
-    posts_limit, created = UsersPostsLimit.get_or_create(user_id=user_id,
-                                                channel_id=channel_id)
-    return posts_limit
 
 
 def get_daily_posts_amount(user_id: int, channel_id: int) -> int:

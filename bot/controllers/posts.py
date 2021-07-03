@@ -1,7 +1,7 @@
 from bot import bot
-from bot.controllers import users, keyboards
+from bot.controllers import users, keyboards, channels
 from telebot import types
-from models import User, PostData, Channel, MediaTypes, PostDataMedia, Post
+from models import User, PostData, Channel, MediaTypes, PostDataMedia, Post, CustomUserPostsLimit
 import html
 
 
@@ -75,9 +75,16 @@ def try_send_preview(msg: types.Message, user: User):
 
 def __check_posts_limit(user_id: int, channel_id: int) -> bool:
     """:returns true if user can send post"""
-    posts_limit = users.get_or_create_user_post_limit(user_id, channel_id)
     sent_posts_amount = users.get_daily_posts_amount(user_id, channel_id)
-    return posts_limit.posts_limit > sent_posts_amount
+
+    custom_posts_limit = CustomUserPostsLimit.get_or_none(
+        CustomUserPostsLimit.user_id == user_id,
+        CustomUserPostsLimit.channel_id == channel_id
+    )
+    if custom_posts_limit is not None:
+        return custom_posts_limit.limit > sent_posts_amount
+    channel_daily_post_limit = channels.get_or_create_post_limit(channel_id)
+    return channel_daily_post_limit.limit > sent_posts_amount
 
 
 def __send_post(chat_id: int, post_data: PostData, as_preview=False):

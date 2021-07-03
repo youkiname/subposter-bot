@@ -1,4 +1,4 @@
-from models import Channel
+from models import Channel, ChannelPostsLimit
 from telebot.types import Message
 from bot import bot
 
@@ -28,5 +28,11 @@ def get_all():
     return Channel.select()
 
 
-def get_channels_amount():
+def get_channels_amount() -> int:
     return Channel.select().count()
+
+
+def get_or_create_post_limit(channel_id: int) -> ChannelPostsLimit:
+    return ChannelPostsLimit.get_or_create(
+        channel_id=channel_id
+    )

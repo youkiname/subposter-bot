@@ -43,7 +43,14 @@ class Admin(BaseModel):
     username = CharField(unique=True, null=True)
 
 
-class UsersPostsLimit(BaseModel):
+class ChannelPostsLimit(BaseModel):
+    id = AutoField()
+    channel_id = BigIntegerField(index=True, unique=True)
+    limit = IntegerField(default=2)
+    moderating_limit = IntegerField(default=2, verbose_name="posts limit in the moderated channel")
+
+
+class CustomUserPostsLimit(BaseModel):
     """Defines users posts limit per day in the specific channel.
     You can set unique limit for every user and every channel."""
     id = AutoField()
