@@ -39,12 +39,14 @@ def get_or_create_settings(user_id: int) -> UserSettings:
 
 
 def get_profile_info(user: User) -> str:
-    info = f"Ваш рейтинг: {user.rating}\nПосты за сегодня:\n"
-    for channel_title, posts_amount in get_daily_posts_amount_in_all_channels(user.id).items():
+    info = f"Ваш рейтинг: {user.rating}\n" \
+           f"Посты за сегодня:\n"
+    for channel_title, posts_amount in get_daily_posts_amount_by_channels(user.id).items():
         info += f"{channel_title}: {posts_amount}\n"
     info += "Посты за всё время:\n"
-    for channel_title, posts_amount in get_posts_amount_in_all_channels(user.id).items():
+    for channel_title, posts_amount in get_posts_amount_by_channels(user.id).items():
         info += f"{channel_title}: {posts_amount}\n"
+    info += f"Всего:{get_posts_amount(user.id)}\n"
 
     info += "Вы поставили лайков:\n"
     for channel_title, likes_amount in get_likes_amount_in_all_channels(user.id).items():
@@ -100,7 +102,7 @@ def get_daily_posts_amount(user_id: int, channel_id: int) -> int:
                                Post.created_at > day_start_time).count()
 
 
-def get_daily_posts_amount_in_all_channels(user_id: int) -> dict:
+def get_daily_posts_amount_by_channels(user_id: int) -> dict:
     """:returns dict with key = channel title, value = posts amount"""
     result = {}
     channels = Channel.select()
@@ -109,7 +111,7 @@ def get_daily_posts_amount_in_all_channels(user_id: int) -> dict:
     return result
 
 
-def get_posts_amount_in_all_channels(user_id: int) -> dict:
+def get_posts_amount_by_channels(user_id: int) -> dict:
     """:returns dict with key = channel title, value = posts amount"""
     result = {}
     channels = Channel.select()
@@ -117,6 +119,10 @@ def get_posts_amount_in_all_channels(user_id: int) -> dict:
         result[channel.title] = Post.select().where(Post.creator_id == user_id,
                                                     Post.channel_id == channel.id).count()
     return result
+
+
+def get_posts_amount(user_id: int) -> int:
+    return Post.select().where(Post.creator_id == user_id).count()
 
 
 def __get_votes_amount_in_all_channels(user_id: int, vote_type: int) -> dict:
