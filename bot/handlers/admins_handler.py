@@ -6,19 +6,19 @@ from bot.controllers import admins
 @bot.message_handler(commands=['add_admin'])
 @exception_handler
 @superuser_required
-def send_channels_list(msg: Message):
+def add_new_admin(msg: Message):
     admins.try_add_new_admin(msg)
 
 
 @bot.message_handler(commands=['admins'])
 @exception_handler
 @superuser_required
-def send_channels_list(msg: Message):
+def send_admins_list(msg: Message):
     admins.send_admins_list(msg.chat.id)
 
 
 @bot.message_handler(commands=['remove_admin'])
 @exception_handler
 @superuser_required
-def send_channels_list(msg: Message):
-    admins.try_remove_admin(msg)
+def delete_admin(msg: Message):
+    admins.try_delete_admin(msg)

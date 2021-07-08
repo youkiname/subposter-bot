@@ -7,7 +7,7 @@ This telegram bot allows subscribers to create their own posts on your channel; 
 - You can add multiple administrators.
 - Telegram native message text formatting.
 - Like and dislike buttons at posts.
-- You can set own daily posts limit for each user and for any channel.
+- You can set custom daily posts limit for each user and for any channel.
 - Users statistic (rating, posts amount, likes, dislikes amount).
 
 # HOW TO RUN
@@ -21,7 +21,7 @@ python start.py
 ```
 
 # TODO:
-- removing channels
+- removing channels (current task)
 - freezing channels
 - Changing users posts limit
 - Changing users rating

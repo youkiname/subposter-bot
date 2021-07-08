@@ -28,7 +28,7 @@ def send_admins_list(chat_id: int):
     bot.send_message(chat_id, str_admins_list)
 
 
-def try_remove_admin(msg: Message):
+def try_delete_admin(msg: Message):
     admin_username = msg.text.split(' ', 1)[1]
     existed_admin = Admin.get_or_none(Admin.username == admin_username)
     if existed_admin is None:
