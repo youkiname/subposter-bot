@@ -19,13 +19,30 @@ def process_channel_addition(msg: Message):
         bot.send_message(msg.chat.id, f"Канал {title} успешно добавлен.\n"
                                       f"/channels - список каналов.")
 
-# TODO
+
 def process_channel_deleting(msg: Message):
-    pass
+    try:
+        channel_title = msg.text.split(' ')[1]
+    except (ValueError, IndexError):
+        bot.send_message(msg.chat.id, "Канал можно удалить по шаблону:\n"
+                                      "/delete_channel <title>\n"
+                                      "Где <title> - название канала\n"
+                                      "/channels - список каналов")
+    else:
+        channel = get_by_title(channel_title)
+        if channel is None:
+            bot.send_message(msg.chat.id, "Канал с таким именем не существует.\n/channels - список каналов")
+            return
+        try_delete(channel.id)
+        bot.send_message(msg.chat.id, f"Канал {channel.title}<{channel.id}> успешно удален.")
 
 
 def add_new(channel_id: int, title: str):
     Channel.create(id=channel_id, title=title)
+
+
+def get_by_title(title: str) -> Channel:
+    return Channel.get_or_none(Channel.title == title)
 
 
 def get_all():

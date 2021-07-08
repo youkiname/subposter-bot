@@ -29,7 +29,7 @@ def add_new_channel(msg: Message):
     channels.process_channel_addition(msg)
 
 
-@bot.message_handler(commands=['add_channel'])
+@bot.message_handler(commands=['delete_channel'])
 @exception_handler
 @admin_required
 def delete_channel(msg: Message):
