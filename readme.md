@@ -21,6 +21,5 @@ python start.py
 ```
 
 # TODO:
-- freezing channels
 - Changing users posts limit
 - Changing users rating

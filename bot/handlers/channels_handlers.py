@@ -34,3 +34,17 @@ def add_new_channel(msg: Message):
 @admin_required
 def delete_channel(msg: Message):
     channels.process_channel_deleting(msg)
+
+
+@bot.message_handler(commands=['freeze_channel'])
+@exception_handler
+@admin_required
+def freeze_channel(msg: Message):
+    channels.process_channel_freezing(msg, channels.ChannelStatusAction.freeze)
+
+
+@bot.message_handler(commands=['unfreeze_channel'])
+@exception_handler
+@admin_required
+def unfreeze_channel(msg: Message):
+    channels.process_channel_freezing(msg, channels.ChannelStatusAction.unfreeze)
