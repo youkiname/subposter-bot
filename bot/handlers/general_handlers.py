@@ -1,6 +1,7 @@
-from bot import bot, exception_handler
+from bot import bot
 from telebot.types import Message
 from bot.controllers import keyboards, users, user_settings
+from bot.middleware import exception_handler
 
 
 @bot.message_handler(commands=['start'])
@@ -18,7 +19,7 @@ def send_chat_id(msg: Message):
 @bot.message_handler(regexp="\/cancel|Отмена")
 @exception_handler
 def cancel(msg: Message):
-    users.clear_state(msg.from_user.id)
+    users.clear_state_by_id(msg.from_user.id)
     bot.send_message(msg.chat.id, "Отменил всё, что можно", reply_markup=keyboards.get_main_keyboard())
 
 

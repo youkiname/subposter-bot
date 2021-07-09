@@ -1,13 +1,75 @@
-from models import Admin, User, PostData, UserSettings, CustomUserPostsLimit, Post, Channel, Vote, VoteTypes
+from models import Admin, User, PostData, UserSettings, Post, Channel, Vote, VoteTypes, TargetUser
 from telebot import types
 from datetime import datetime
 from config import config
+from bot import bot
 
 
 class States:
     FREE = 0
     CHANNEL_CHOOSING = 1
     POST_CREATING = 2
+    RATING_CHANGE = 3
+    MESSAGE_FORWARDING = 4
+
+
+def superuser_required(handler):
+    def wrapper_accepting_arguments(msg):
+        if is_superuser(msg.from_user.id):
+            handler(msg)
+        else:
+            bot.send_message(msg.chat.id, "Недостаточно полномочий")
+    return wrapper_accepting_arguments
+
+
+def admin_required(handler):
+    def wrapper_accepting_arguments(msg):
+        if is_admin(msg.from_user.id):
+            handler(msg)
+        else:
+            bot.send_message(msg.chat.id, "Недостаточно полномочий")
+    return wrapper_accepting_arguments
+
+
+def start_rating_change(msg: types.Message):
+    admin = get_or_create_user(msg.from_user)
+    target_user = __try_get_user_from_message_text(msg)
+    if not target_user:
+        return
+    admin.state = States.RATING_CHANGE
+    admin.save()
+    __get_or_create_target_user(admin.id, target_user.id)
+    bot.send_message(msg.chat.id, f"Вы выбрали пользователя:\n"
+                                  f"@{target_user.username} <{target_user.id}>\n"
+                                  f"Рейтинг: {target_user.rating}\n"
+                                  f"Отправьте число, на которое будет изменен рейтинг.\n"
+                                  f"Пример: '20' - увеличить на 20\n"
+                                  f"'-20' - уменьшить на 20")
+
+
+def continue_rating_change(msg: types.Message):
+    admin = get_or_create_user(msg.from_user)
+    temp_target_user_data = TargetUser.get_or_none(TargetUser.user_id == admin.id)
+    if temp_target_user_data is None:
+        bot.send_message(msg.chat.id, "Пользователь не выбран. Попробуйте ещё раз.\n"
+                                      "/change_user_rating")
+        clear_state(admin)
+        return
+    if not msg.text.isnumeric():
+        bot.send_message(msg.chat.id, "Отправь сдвиг рейтинга числом.")
+        return
+    rating_offset = int(msg.text)
+
+    target_user = User.get_by_id(temp_target_user_data.target_id)
+    target_user.rating += rating_offset
+
+
+    clear_state(admin)
+    temp_target_user_data.delete_instance()
+    bot.send_message(msg.chat.id, f"Рейтинг пользователя успешно изменён.\n"
+                                  f"@{target_user.username} <{target_user.id}>\n"
+                                  f"Рейтинг: {target_user.rating}\n")
+    target_user.save()
 
 
 def get_or_create_user(from_user: types.User) -> User:
@@ -88,6 +150,11 @@ def is_user_creating_post(msg: types.Message) -> bool:
     return user.state in [States.POST_CREATING, States.CHANNEL_CHOOSING]
 
 
+def is_admin_on_rating_change_state(msg: types.Message) -> bool:
+    admin = get_or_create_user(msg.from_user)
+    return admin.state == States.RATING_CHANGE
+
+
 def get_daily_posts_amount(user_id: int, channel_id: int) -> int:
     """:returns posts amount was sent by user today"""
     day_start_time = datetime.now().replace(hour=0, minute=0).timestamp()
@@ -140,15 +207,45 @@ def get_dislikes_amount_in_all_channels(user_id: int) -> dict:
     return __get_votes_amount_in_all_channels(user_id, VoteTypes.like)
 
 
-def try_change_rating(user_id: int, offset: int):
+def try_change_rating_by_id(user_id: int, offset: int):
     user = User.get_or_none(id=user_id)
     if user:
         user.rating += offset
         user.save()
 
 
-def clear_state(user_id: int):
+def clear_state_by_id(user_id: int):
     user = User.get_by_id(user_id)
     user.state = States.FREE
     PostData.delete().where(PostData.creator_id == user.id).execute()
     user.save()
+
+
+def clear_state(user: User):
+    user.state = States.FREE
+    user.save()
+
+
+def __try_get_user_from_message_text(msg: types.Message) -> User or None:
+    """example: /command <username or id>"""
+    try:
+        username = msg.text.split(' ')[1]
+    except (ValueError, IndexError):
+        bot.send_message(msg.chat.id, "Действия с пользователем:\n"
+                                      "/change_rating <username>\n"
+                                      "<username or id> - имя пользователя или id")
+        return None
+    else:
+        if username.isnumeric():
+            user_id = int(username)
+            return User.get_or_none(User.id == user_id)
+        return User.get_or_none(User.username == username)
+
+
+def __get_or_create_target_user(admin_id: int, target_id: int):
+    target_user = TargetUser.get_or_none(TargetUser.user_id == admin_id)
+    if target_user is not None:
+        target_user.target_id = target_id
+        target_user.save()
+        return target_user
+    return TargetUser.create(user_id=admin_id, target_id=target_id)

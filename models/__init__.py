@@ -38,6 +38,14 @@ class User(BaseModel):
         table_name = 'users'
 
 
+class TargetUser(BaseModel):
+    """This model is used to save temp user_id while
+    rating change or forwarding message from bot by admin"""
+    id = AutoField()
+    user_id = BigIntegerField(index=True, unique=True)
+    target_id = BigIntegerField()
+
+
 class Admin(BaseModel):
     id = BigIntegerField(unique=True, primary_key=True, index=True)
     username = CharField(unique=True, null=True)

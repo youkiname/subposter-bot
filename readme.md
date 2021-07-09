@@ -22,4 +22,3 @@ python start.py
 
 # TODO:
 - Changing users posts limit
-- Changing users rating

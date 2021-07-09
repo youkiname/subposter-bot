@@ -1,6 +1,7 @@
-from bot import bot, exception_handler
+from bot import bot
 from telebot.types import Message
 from bot.controllers import posts, users
+from bot.middleware import exception_handler
 
 
 @bot.message_handler(regexp="Создать пост")

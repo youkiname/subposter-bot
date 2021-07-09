@@ -19,16 +19,16 @@ def __get_dislikes_count(channel_id: int, post_id: int) -> int:
 def __update_post_creator_rating(previous_vote: Vote, new_vote: Vote, user_id: int):
     if previous_vote is None:
         if new_vote.type == VoteTypes.like:
-            users.try_change_rating(user_id, offset=1)
+            users.try_change_rating_by_id(user_id, offset=1)
         else:
-            users.try_change_rating(user_id, offset=-1)
+            users.try_change_rating_by_id(user_id, offset=-1)
         return
 
     if previous_vote.type == VoteTypes.like and new_vote.type == VoteTypes.dislike:
-        users.try_change_rating(user_id, offset=-2)
+        users.try_change_rating_by_id(user_id, offset=-2)
         return
     if previous_vote.type == VoteTypes.dislike and new_vote.type == VoteTypes.like:
-        users.try_change_rating(user_id, offset=2)
+        users.try_change_rating_by_id(user_id, offset=2)
 
 
 def __update_post_keyboard(channel_id: int, post_id: int):
