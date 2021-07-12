@@ -19,6 +19,3 @@ pip install -r requirements.txt
 ```python
 python start.py
 ```
-
-# TODO:
-- Changing users posts limit
