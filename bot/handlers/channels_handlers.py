@@ -25,14 +25,14 @@ def send_channels_list(msg: Message):
 
 @bot.message_handler(commands=['add_channel'])
 @exception_handler
-@users.admin_required
+@users.superuser_required
 def add_new_channel(msg: Message):
     channels.process_channel_addition(msg)
 
 
 @bot.message_handler(commands=['delete_channel'])
 @exception_handler
-@users.admin_required
+@users.superuser_required
 def delete_channel(msg: Message):
     channels.process_channel_deleting(msg)
 
