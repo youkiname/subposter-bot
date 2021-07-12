@@ -1,6 +1,6 @@
 # SUB POSTER BOT
 This telegram bot allows subscribers to create their own posts on your channel; or sent posts to the special moderated channel to confirm it. 
-
+For now interface is only in russian.
 # Features
 - Supporting photo, animation and video post types.
 - You can add multiple channels.
@@ -19,3 +19,7 @@ pip install -r requirements.txt
 ```python
 python start.py
 ```
+
+# TODO
+- English translation
+- Moderated channel

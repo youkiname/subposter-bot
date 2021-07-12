@@ -20,7 +20,7 @@ def send_channels_list(msg: Message):
         bot.send_message(msg.chat.id, result_text)
     else:
         bot.send_message(msg.chat.id, "Пока что нет добавленных каналов.\n"
-                                      "/add_new_channel <id> <title> - добавить новый.")
+                                      "/add_channel <id> <title> - добавить новый.")
 
 
 @bot.message_handler(commands=['add_channel'])

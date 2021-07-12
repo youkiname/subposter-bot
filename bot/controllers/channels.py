@@ -90,7 +90,7 @@ def __try_get_channel_data(msg: Message) -> (int, str) or None:
         return channel_id, title
     except (ValueError, IndexError):
         bot.send_message(msg.chat.id, "Канал добавляется по шаблону:\n"
-                                      "/add_new_channel <id> <title>\n"
+                                      "/add_channel <id> <title>\n"
                                       "Где <id> - число, которое можно получить командой "
                                       "/get_id (добавив перед этим бота в канал)\n"
                                       "<title> - название канала")

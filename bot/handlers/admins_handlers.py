@@ -18,7 +18,7 @@ def send_admins_list(msg: Message):
     admins.send_admins_list(msg.chat.id)
 
 
-@bot.message_handler(commands=['remove_admin'])
+@bot.message_handler(commands=['delete_admin'])
 @exception_handler
 @users.superuser_required
 def delete_admin(msg: Message):

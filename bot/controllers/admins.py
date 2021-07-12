@@ -1,18 +1,17 @@
 from bot import bot
 from telebot.types import Message
-from models import Admin, User
+from models import Admin
+from bot.utils import MessageTextSplitter
 
 
 def try_add_new_admin(msg: Message):
-    new_admin_username = msg.text.split(' ', 1)[1]
-    existed_user = User.get_or_none(User.username == new_admin_username)
-    if existed_user is None:
-        bot.send_message(msg.chat.id, "Пользователя с таким именем не существует")
+    future_admin = MessageTextSplitter.try_get_user_from_message_text(msg)
+    if future_admin is None:
         return
 
-    admin, created = Admin.get_or_create(id=existed_user.id)
+    admin, created = Admin.get_or_create(id=future_admin.id)
     if created:
-        admin.username = new_admin_username
+        admin.username = future_admin.username
         admin.save()
         bot.send_message(msg.chat.id, f"Новый администратор добавлен:\n"
                                       f"{admin.id}: {admin.username}")
@@ -29,11 +28,11 @@ def send_admins_list(chat_id: int):
 
 
 def try_delete_admin(msg: Message):
-    admin_username = msg.text.split(' ', 1)[1]
-    existed_admin = Admin.get_or_none(Admin.username == admin_username)
-    if existed_admin is None:
+    admin = MessageTextSplitter.try_get_admin_from_message_text(msg)
+    if admin is None:
         bot.send_message(msg.chat.id, "Администратор с таким именем не существует.\n"
                                       "/admins - список администраторов")
         return
-    existed_admin.delete_instance()
-    bot.send_message(msg.chat.id, f"Администратор с именем {admin_username} успешно удалён.")
+
+    bot.send_message(msg.chat.id, f"Администратор с именем {admin.username} успешно удалён.")
+    admin.delete_instance()
