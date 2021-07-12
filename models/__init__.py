@@ -46,6 +46,14 @@ class TargetUser(BaseModel):
     target_id = BigIntegerField()
 
 
+class TargetChannel(BaseModel):
+    """This model is used to save temp channel_id while
+    custom daily post limit change for some user"""
+    id = AutoField()
+    user_id = BigIntegerField(index=True, unique=True)
+    channel_id = BigIntegerField()
+
+
 class Admin(BaseModel):
     id = BigIntegerField(unique=True, primary_key=True, index=True)
     username = CharField(unique=True, null=True)
@@ -64,7 +72,7 @@ class CustomUserPostsLimit(BaseModel):
     id = AutoField()
     user_id = BigIntegerField(index=True)
     channel_id = BigIntegerField()
-    posts_limit = IntegerField(default=2)
+    limit = IntegerField(default=2)
     moderating_limit = IntegerField(default=2, verbose_name="posts limit in the moderated channel")
 
 
