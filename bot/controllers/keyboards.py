@@ -9,7 +9,8 @@ def get_main_keyboard() -> types.ReplyKeyboardMarkup:
     markup.add(
         types.KeyboardButton('Создать пост'),
         types.KeyboardButton('Инфо'),
-        types.KeyboardButton('Профиль')
+        types.KeyboardButton('Профиль'),
+        types.KeyboardButton('Отмена'),
     )
     return markup
 
