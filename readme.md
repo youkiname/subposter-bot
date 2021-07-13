@@ -41,7 +41,7 @@ conversation or special channel.
 
 # How to run
 1. Setup configuration and run database.
-2. Installing requirements. Recommended to use virtual environment.
+2. Installing requirements. Recommended to use [Python Virtual Environment](https://docs.python.org/3/tutorial/venv.html).
 ```python
 pip install -r requirements.txt
 ```
