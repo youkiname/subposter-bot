@@ -83,6 +83,14 @@ sudo systemctl reload nginx
 4. Go to the [BotFather](https://t.me/botfather) and set domain settings to your bot.
    See [Telegram Bot API](https://core.telegram.org/bots/api) -> Webhooks.
 
+# Using examples
+### Creating post
+![create post example](img/create_post_1.png "create post example")
+
+Post after sending to the channel.
+
+![create post example 2](img/create_post_2.png "create post example 2")
+
 # TODO
 - English translation
 - Moderated channel
