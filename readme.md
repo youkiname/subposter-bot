@@ -55,13 +55,32 @@ python start.py
 Telegram API require domain with SSL! Only 'https://' links.
    
 ```python
-WEBHOOK_HOST = 'your_domain_name'
+WEBHOOK_HOST = '127.0.0.1'
 WEBHOOK_PORT = 5000
-WEBHOOK_URL = "/your_bot_token/"
 POLLING_USING = False  # disable polling to start aiohttp app.
 ```
 
-2. Go to the [BotFather](https://t.me/botfather) and set domain settings to your bot.
+2. Set Nginx redirection to 127.0.0.1:5000.
+Nginx config example:
+   
+```python
+server {
+  listen 443 ssl;
+  server_name example.com;
+
+
+  location /your_bot_token {
+     proxy_pass http://127.0.0.1:5000/bot/;
+  }
+}
+```
+
+3. Restart Nginx.
+```commandline
+sudo systemctl reload nginx
+```
+
+4. Go to the [BotFather](https://t.me/botfather) and set domain settings to your bot.
    See [Telegram Bot API](https://core.telegram.org/bots/api) -> Webhooks.
 
 # TODO
