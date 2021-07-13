@@ -1,4 +1,4 @@
-from app import web, app
+from web_app import web, app
 from bot import bot
 from config import config
 import logging
