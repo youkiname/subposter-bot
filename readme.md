@@ -96,6 +96,10 @@ Post after sending to the channel.
 You can use formatting by right click on pc and long press on phone -> formatting.
 ![text formatting example](img/text_formatting.png "text formatting example")
 
+### Post sign
+Bot can automatically add your first name or username to a post caption.
+![user sign change example](img/user_sign.png "user sign change example")
+
 ### Your profile info
 ![profile info example](img/profile.png "profile info example")
 
