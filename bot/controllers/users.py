@@ -94,7 +94,7 @@ def start_daily_post_limit_change(msg: types.Message):
                                   f"@{user.username} <{user.id}>\n"
                                   f"Канал:\n"
                                   f"{channel.title} <{channel.id}>\n"
-                                  f"Текующий суточный лимит: {user_daily_posts_limit}\n"
+                                  f"Текущий суточный лимит: {user_daily_posts_limit}\n"
                                   f"Отправьте новый суточный лимит числом в следующем сообщении.")
 
 
