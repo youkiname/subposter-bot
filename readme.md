@@ -50,6 +50,20 @@ pip install -r requirements.txt
 python start.py
 ```
 
+# Setup Webhooks
+1. By default, bot use polling. It's not recommended for production. You can set webhooks in config.py.
+Telegram API require domain with SSL! Only 'https://' links.
+   
+```python
+WEBHOOK_HOST = 'your_domain_name'
+WEBHOOK_PORT = 5000
+WEBHOOK_URL = "/your_bot_token/"
+POLLING_USING = False  # disable polling to start aiohttp app.
+```
+
+2. Go to the [BotFather](https://t.me/botfather) and set domain settings to your bot.
+   See [Telegram Bot API](https://core.telegram.org/bots/api) -> Webhooks.
+
 # TODO
 - English translation
 - Moderated channel
