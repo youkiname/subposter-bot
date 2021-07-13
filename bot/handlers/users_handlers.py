@@ -4,7 +4,7 @@ from bot.controllers import users
 from bot.middleware import exception_handler
 
 
-@bot.message_handler(commands=['change_user_rating'])
+@bot.message_handler(commands=['change_rating'])
 @exception_handler
 @users.admin_required
 def change_user_rating(msg: Message):

@@ -103,11 +103,9 @@ def __try_get_channel_title(msg: Message) -> str or None:
         return channel_title
     except (ValueError, IndexError):
         bot.send_message(msg.chat.id, "Действия с каналом:\n"
-                                      "/<command> <title>\n"
-                                      "Где <command> одно из:\n"
-                                      "/delete_channel\n"
-                                      "/freeze_channel\n"
-                                      "/unfreeze_channel\n"
+                                      "/delete_channel <title>\n"
+                                      "/freeze_channel <title>\n"
+                                      "/unfreeze_channel <title>\n"
                                       "<title> - название канала\n"
                                       "/channels - список каналов")
         return None

@@ -59,7 +59,7 @@ def continue_rating_change(msg: types.Message):
     temp_target_user_data = TargetUser.get_or_none(TargetUser.user_id == admin.id)
     if temp_target_user_data is None:
         bot.send_message(msg.chat.id, "Пользователь не выбран. Попробуйте ещё раз.\n"
-                                      "/change_user_rating")
+                                      "/change_rating")
         clear_state(admin)
         return
     if not msg.text.isnumeric():
