@@ -10,6 +10,7 @@ For now interface is only in russian.
 - Telegram native message text formatting.
 - Like and dislike buttons at posts.
 - You can set custom daily posts limit for each user and for any channel.
+- Rating. +1 point for like and -1 point for dislike.
 - Users statistic (rating, posts amount, likes, dislikes amount).
 
 # How to config
@@ -91,6 +92,49 @@ Post after sending to the channel.
 
 ![create post example 2](img/create_post_2.png "create post example 2")
 
+### Text formatting
+You can use formatting by right click on pc and long press on phone -> formatting.
+![text formatting example](img/text_formatting.png "text formatting example")
+
+### Your profile info
+![profile info example](img/profile.png "profile info example")
+
+## Admin commands
+### Add new admin.
+Superuser required.
+![add new admin](img/add_admin.png "add new admin")
+
+### Delete admin.
+Superuser required.
+![Delete admin](img/delete_admin.png "Delete admin")
+
+### Add new channel.
+Superuser required.
+![Add new channel](img/add_channel.png "Add new channel")
+
+### Delete channel.
+Superuser required.
+![Delete channel](img/delete_channel.png "Delete channel")
+
+### Freeze channel.
+Admin required. After freezing users can't send new posts to this channel until unfreeze.
+Channel will not be displayed while post creating.
+![Freeze channel](img/freeze_channel.png "Freeze channel")
+
+### Unfreeze channel.
+Admin required.
+![Unfreeze channel](img/unfreeze_channel.png "Unfreeze channel")
+
+### Change user custom daily posts limit.
+Admin required. User can send only 2 posts by default in every channel. You can set own limit for each user.
+![Change user custom daily posts limit](img/change_post_limit.png "Change user custom daily posts limit")
+
+### Change user rating.
+Admin required.
+![Change user rating](img/change_rating.png "Change user rating")
+
+
 # TODO
 - English translation
 - Moderated channel
+- Change default channel daily posts limit.
