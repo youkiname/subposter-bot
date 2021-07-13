@@ -18,7 +18,6 @@ class Configuration:
 
     SUPER_ADMIN_ID = None
     EXCEPTION_LOG_CHAT_ID = None
-    LOG_CHAT_ID = None
 
     MODERATED_CHANNEL_ID = None
 

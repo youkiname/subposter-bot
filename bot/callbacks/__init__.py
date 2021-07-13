@@ -17,7 +17,8 @@ def callback_exception_handler(handler):
             handler(callback)
         except Exception as e:
             bot.answer_callback_query(callback.id, "Произошла ошибка: {}.".format(type(e).__name__), show_alert=True)
-            bot.send_message(config.EXCEPTION_LOG_CHAT_ID, "Поймано исключение {} в {}:\n"
-                                                           "{}".format(type(e).__name__, handler.__name__, e))
+            if config.EXCEPTION_LOG_CHAT_ID:
+                bot.send_message(config.EXCEPTION_LOG_CHAT_ID, "Поймано исключение {} в {}:\n"
+                                                               "{}".format(type(e).__name__, handler.__name__, e))
             logging.exception(e)
     return wrapper_accepting_arguments

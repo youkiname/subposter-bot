@@ -3,12 +3,7 @@ from config import config
 import time
 
 
-def __get_inheritors(parent):
-    """:return list of child classes"""
-    subclasses = set()
-    for child in parent.__subclasses__():
-        subclasses.add(child)
-    return subclasses
+SUPER_ADMIN_USERNAME = "superuser"
 
 
 # Peewee database connection documentation
@@ -159,4 +154,25 @@ class Vote(BaseModel):
 def init_db():
     db.connect()
     db.create_tables(__get_inheritors(BaseModel))
-    Admin.get_or_create(id=config.SUPER_ADMIN_ID, username="superuser")
+    __create_or_update_super_admin()
+
+
+def __create_or_update_super_admin():
+    if config.SUPER_ADMIN_ID is None:
+        return
+
+    admin = Admin.get_or_none(Admin.username == SUPER_ADMIN_USERNAME)
+    if admin is None:
+        Admin.create(id=config.SUPER_ADMIN_ID, username=SUPER_ADMIN_USERNAME)
+        return
+    if admin.id != config.SUPER_ADMIN_ID:
+        admin.id = config.SUPER_ADMIN_ID
+        admin.save()
+
+
+def __get_inheritors(parent):
+    """:return list of child classes"""
+    subclasses = set()
+    for child in parent.__subclasses__():
+        subclasses.add(child)
+    return subclasses
