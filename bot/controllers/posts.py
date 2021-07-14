@@ -58,7 +58,8 @@ def __try_choose_channel(msg: types.Message, user: User):
 def __set_new_data_to_post(msg: types.Message, user: User):
     post_data = post_services.get_post_data_by_creator_id(user.id)
 
-    post_services.replace_text(post_data, msg)
+    formatted_text = post_services.FormattedMessageTextData(msg.text, msg.caption, msg.entities)
+    post_services.replace_text(post_data, formatted_text)
 
     if msg.content_type not in ['text', MediaTypes.album]:
         post_services.replace_existing_media_data(post_data, msg)
