@@ -1,6 +1,6 @@
-from models import Channel, ChannelPostsLimit
 from telebot.types import Message
 from bot import bot
+from bot.services import channels as channel_services
 
 
 class ChannelStatusAction:
@@ -14,12 +14,23 @@ class ChannelStatusAction:
         return "разморожен"
 
 
+def send_channels_list(msg: Message):
+    result_text = ""
+    for channel in channel_services.get_all():
+        result_text += f"{channel.title} <{channel.id}>\n"
+    if result_text:
+        bot.send_message(msg.chat.id, result_text)
+    else:
+        bot.send_message(msg.chat.id, "Пока что нет добавленных каналов.\n"
+                                      "/add_channel <id> <title> - добавить новый.")
+
+
 def process_channel_addition(msg: Message):
     channel_data = __try_get_channel_data(msg)
     if channel_data is None:
         return
     channel_id, title = channel_data
-    add_new(channel_id, title)
+    channel_services.add_new(channel_id, title)
     bot.send_message(msg.chat.id, f"Канал {title} успешно добавлен.\n"
                                   f"/channels - список каналов.")
 
@@ -29,57 +40,26 @@ def process_channel_deleting(msg: Message):
     if channel_title is None:
         return
 
-    channel = get_by_title(channel_title)
+    channel = channel_services.get_by_title(channel_title)
     if channel is None:
         bot.send_message(msg.chat.id, "Канал с таким именем не существует.\n/channels - список каналов")
         return
-    try_delete(channel.id)
+    channel_services.delete_if_exist(channel.id)
     bot.send_message(msg.chat.id, f"Канал {channel.title}<{channel.id}> успешно удален.")
 
 
 def process_channel_freezing(msg: Message, status: bool):
-    """:param status - one of ChannelStatusAction"""
     channel_title = __try_get_channel_title(msg)
     if channel_title is None:
         return
 
-    channel = get_by_title(channel_title)
+    channel = channel_services.get_by_title(channel_title)
     if channel is None:
         bot.send_message(msg.chat.id, "Канал с таким именем не существует.\n/channels - список каналов")
         return
     channel.frozen = status
     channel.save()
     bot.send_message(msg.chat.id, f"Канал {channel.title}<{channel.id}> {ChannelStatusAction.to_text(status)}.")
-
-
-def add_new(channel_id: int, title: str):
-    Channel.create(id=channel_id, title=title)
-
-
-def get_by_title(title: str) -> Channel or None:
-    return Channel.get_or_none(Channel.title == title)
-
-
-def get_all():
-    return Channel.select()
-
-
-def get_channels_amount() -> int:
-    return Channel.select().count()
-
-
-def get_or_create_post_limit(channel_id: int) -> ChannelPostsLimit:
-    posts_limit, created = ChannelPostsLimit.get_or_create(channel_id=channel_id)
-    return posts_limit
-
-
-def try_delete(channel_id: int):
-    channel = Channel.get_or_none(Channel.id == channel_id)
-    if channel is not None:
-        channel.delete_instance()
-    channel_posts_limit = ChannelPostsLimit.get_or_none(ChannelPostsLimit.channel_id == channel_id)
-    if channel_posts_limit is not None:
-        channel_posts_limit.delete_instance()
 
 
 def __try_get_channel_data(msg: Message) -> (int, str) or None:

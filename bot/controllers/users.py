@@ -1,26 +1,15 @@
-from models import (Admin, User, PostData, UserSettings,
-                    Post, Channel, Vote, VoteTypes, TargetUser,
-                    TargetChannel, CustomUserPostsLimit)
 from telebot import types
-from datetime import datetime
-from config import config
+
 from bot import bot
-from bot.controllers import channels
+from bot.services import users as user_services
+from bot.services.user_states import UserStates
 from bot.utils import MessageTextSplitter
-
-
-class States:
-    FREE = 0
-    CHANNEL_CHOOSING = 1
-    POST_CREATING = 2
-    RATING_CHANGE = 3
-    MESSAGE_FORWARDING = 4
-    DAILY_POST_LIMIT_CHANGE = 5
+from models import User, TargetUser, TargetChannel
 
 
 def superuser_required(handler):
     def wrapper_accepting_arguments(msg):
-        if is_superuser(msg.from_user.id):
+        if user_services.is_superuser(msg.from_user.id):
             handler(msg)
         else:
             bot.send_message(msg.chat.id, "Недостаточно полномочий")
@@ -30,7 +19,7 @@ def superuser_required(handler):
 
 def admin_required(handler):
     def wrapper_accepting_arguments(msg):
-        if is_admin(msg.from_user.id):
+        if user_services.is_admin(msg.from_user.id):
             handler(msg)
         else:
             bot.send_message(msg.chat.id, "Недостаточно полномочий")
@@ -38,14 +27,20 @@ def admin_required(handler):
     return wrapper_accepting_arguments
 
 
+def send_profile_info(msg: types.Message):
+    user = get_or_create_user(msg.from_user)
+    info = user_services.get_profile_info(user)
+    bot.send_message(msg.chat.id, info)
+
+
 def start_rating_change(msg: types.Message):
     admin = get_or_create_user(msg.from_user)
     user = MessageTextSplitter.try_get_user_from_message_text(msg)
     if not user:
         return
-    admin.state = States.RATING_CHANGE
+    admin.state = UserStates.RATING_CHANGE
     admin.save()
-    __get_or_create_target_user(admin.id, user.id)
+    user_services.get_or_create_target_user(admin.id, user.id)
     bot.send_message(msg.chat.id, f"Вы выбрали пользователя:\n"
                                   f"@{user.username} <{user.id}>\n"
                                   f"Рейтинг: {user.rating}\n"
@@ -60,7 +55,7 @@ def continue_rating_change(msg: types.Message):
     if temp_target_user_data is None:
         bot.send_message(msg.chat.id, "Пользователь не выбран. Попробуйте ещё раз.\n"
                                       "/change_rating")
-        clear_state(admin)
+        user_services.clear_state(admin)
         return
     if not msg.text.isnumeric():
         bot.send_message(msg.chat.id, "Отправь сдвиг рейтинга числом.")
@@ -70,7 +65,7 @@ def continue_rating_change(msg: types.Message):
     target_user = User.get_by_id(temp_target_user_data.target_id)
     target_user.rating += rating_offset
 
-    clear_state(admin)
+    user_services.clear_state(admin)
     temp_target_user_data.delete_instance()
     bot.send_message(msg.chat.id, f"Рейтинг пользователя успешно изменён.\n"
                                   f"@{target_user.username} <{target_user.id}>\n"
@@ -84,12 +79,14 @@ def start_daily_post_limit_change(msg: types.Message):
     channel = MessageTextSplitter.try_get_channel_from_message_text(msg)
     if not user or not channel:
         return
-    
-    user_daily_posts_limit = get_daily_posts_limit(user.id, channel.id)
-    admin.state = States.DAILY_POST_LIMIT_CHANGE
+
+    admin.state = UserStates.DAILY_POST_LIMIT_CHANGE
     admin.save()
-    __get_or_create_target_user(admin.id, user.id)
-    __get_or_create_target_channel(admin.id, channel.id)
+
+    user_services.get_or_create_target_user(admin.id, user.id)
+    user_services.get_or_create_target_channel(admin.id, channel.id)
+
+    user_daily_posts_limit = user_services.get_daily_posts_limit(user.id, channel.id)
     bot.send_message(msg.chat.id, f"Вы выбрали пользователя:\n"
                                   f"@{user.username} <{user.id}>\n"
                                   f"Канал:\n"
@@ -105,21 +102,36 @@ def continue_daily_post_limit_change(msg: types.Message):
     if temp_target_user_data is None or temp_target_channel_data is None:
         bot.send_message(msg.chat.id, "Пользователь или канал не выбран. Попробуйте ещё раз.\n"
                                       "/change_post_limit")
-        clear_state(admin)
+        user_services.clear_state(admin)
         return
     if not msg.text.isnumeric() or int(msg.text) < 0:
         bot.send_message(msg.chat.id, "Отправь новый лимит положительным числом.")
         return
     new_daily_limit = int(msg.text)
-    __create_or_set_custom_posts_limit(user_id=temp_target_user_data.target_id,
-                                       channel_id=temp_target_channel_data.channel_id,
-                                       posts_limit=new_daily_limit)
+    user_services.create_or_set_custom_posts_limit(user_id=temp_target_user_data.target_id,
+                                                   channel_id=temp_target_channel_data.channel_id,
+                                                   posts_limit=new_daily_limit)
 
-    clear_state(admin)
+    user_services.clear_state(admin)
     temp_target_user_data.delete_instance()
     temp_target_channel_data.delete_instance()
-    
+
     bot.send_message(msg.chat.id, f"Новый суточный лимит постов установлен.")
+
+
+def is_user_creating_post(msg: types.Message) -> bool:
+    user = get_or_create_user(msg.from_user)
+    return user.state in [UserStates.POST_CREATING, UserStates.CHANNEL_CHOOSING]
+
+
+def is_admin_on_rating_change_state(msg: types.Message) -> bool:
+    admin = get_or_create_user(msg.from_user)
+    return admin.state == UserStates.RATING_CHANGE
+
+
+def is_admin_on_daily_posts_limit_change_state(msg: types.Message) -> bool:
+    admin = get_or_create_user(msg.from_user)
+    return admin.state == UserStates.DAILY_POST_LIMIT_CHANGE
 
 
 def get_or_create_user(from_user: types.User) -> User:
@@ -143,178 +155,3 @@ def get_or_create_user(from_user: types.User) -> User:
     if is_user_changed:
         db_user.save()
     return db_user
-
-
-def get_or_create_settings(user_id: int) -> UserSettings:
-    settings, created = UserSettings.get_or_create(id=user_id)
-    return settings
-
-
-def get_profile_info(user: User) -> str:
-    info = f"Ваш рейтинг: {user.rating}\n" \
-           f"Посты за сегодня:\n"
-    for channel_title, posts_amount in get_daily_posts_amount_by_channels(user.id).items():
-        info += f"{channel_title}: {posts_amount}\n"
-    info += "Посты за всё время:\n"
-    for channel_title, posts_amount in get_posts_amount_by_channels(user.id).items():
-        info += f"{channel_title}: {posts_amount}\n"
-    info += f"Всего:{get_posts_amount(user.id)}\n"
-
-    info += "Вы поставили лайков:\n"
-    for channel_title, likes_amount in get_likes_amount_in_all_channels(user.id).items():
-        info += f"{channel_title}: {likes_amount}\n"
-    info += "Вы поставили дизлайков:\n"
-    for channel_title, dislikes_amount in get_dislikes_amount_in_all_channels(user.id).items():
-        info += f"{channel_title}: {dislikes_amount}\n"
-    return info
-
-
-def get_user_sign(user_id: int) -> str:
-    """:returns string 'by first_name last_name' if user has activated this in the settings.
-                Empty string if user want to sent posts anonymously"""
-    settings = get_or_create_settings(user_id)
-    user = User.get_by_id(user_id)
-    if settings.attaching_fullname and settings.attaching_username and user.username:
-        if user.last_name:
-            return f"by {user.first_name} {user.last_name} (@{user.username})"
-        return f"by {user.first_name} (@{user.username})"
-    elif settings.attaching_username and user.username:
-        return f"by @{user.username}"
-    elif settings.attaching_fullname:
-        if user.last_name:
-            return f"by {user.first_name} {user.last_name}"
-        return f"by {user.first_name}"
-    return ""
-
-
-def is_admin(user_id: int) -> bool:
-    return Admin.get_or_none(id=user_id) is not None
-
-
-def is_superuser(user_id: int) -> bool:
-    return user_id == config.SUPER_ADMIN_ID
-
-
-def is_user_creating_post(msg: types.Message) -> bool:
-    user = get_or_create_user(msg.from_user)
-    return user.state in [States.POST_CREATING, States.CHANNEL_CHOOSING]
-
-
-def is_admin_on_rating_change_state(msg: types.Message) -> bool:
-    admin = get_or_create_user(msg.from_user)
-    return admin.state == States.RATING_CHANGE
-
-
-def is_admin_on_daily_posts_limit_change_state(msg: types.Message) -> bool:
-    admin = get_or_create_user(msg.from_user)
-    return admin.state == States.DAILY_POST_LIMIT_CHANGE
-
-
-def get_daily_posts_amount(user_id: int, channel_id: int) -> int:
-    """:returns posts amount was sent by user today"""
-    day_start_time = datetime.now().replace(hour=0, minute=0).timestamp()
-    return Post.select().where(Post.creator_id == user_id,
-                               Post.channel_id == channel_id,
-                               Post.created_at > day_start_time).count()
-
-
-def get_daily_posts_amount_by_channels(user_id: int) -> dict:
-    """:returns dict with key = channel title, value = posts amount"""
-    result = {}
-    channels = Channel.select()
-    for channel in channels:
-        result[channel.title] = get_daily_posts_amount(user_id, channel.id)
-    return result
-
-
-def get_posts_amount_by_channels(user_id: int) -> dict:
-    """:returns dict with key = channel title, value = posts amount"""
-    result = {}
-    channels = Channel.select()
-    for channel in channels:
-        result[channel.title] = Post.select().where(Post.creator_id == user_id,
-                                                    Post.channel_id == channel.id).count()
-    return result
-
-
-def get_posts_amount(user_id: int) -> int:
-    return Post.select().where(Post.creator_id == user_id).count()
-
-
-def get_likes_amount_in_all_channels(user_id: int) -> dict:
-    """:returns dict with key = channel title, value = likes amount"""
-    return __get_votes_amount_in_all_channels(user_id, VoteTypes.like)
-
-
-def get_dislikes_amount_in_all_channels(user_id: int) -> dict:
-    """:returns dict with key = channel title, value = dislikes amount"""
-    return __get_votes_amount_in_all_channels(user_id, VoteTypes.like)
-
-
-def try_change_rating_by_id(user_id: int, offset: int):
-    user = User.get_or_none(id=user_id)
-    if user:
-        user.rating += offset
-        user.save()
-
-
-def clear_state_by_id(user_id: int):
-    user = User.get_by_id(user_id)
-    user.state = States.FREE
-    PostData.delete().where(PostData.creator_id == user.id).execute()
-    user.save()
-
-
-def clear_state(user: User):
-    user.state = States.FREE
-    user.save()
-
-
-def get_daily_posts_limit(user_id: int, channel_id: int) -> int:
-    custom_posts_limit = CustomUserPostsLimit.get_or_none(
-        CustomUserPostsLimit.user_id == user_id,
-        CustomUserPostsLimit.channel_id == channel_id
-    )
-    if custom_posts_limit is not None:
-        return custom_posts_limit.limit
-    channel_daily_post_limit = channels.get_or_create_post_limit(channel_id)
-    return channel_daily_post_limit.limit
-
-
-def __get_or_create_target_user(admin_id: int, target_id: int) -> TargetUser:
-    target_user = TargetUser.get_or_none(TargetUser.user_id == admin_id)
-    if target_user is not None:
-        target_user.target_id = target_id
-        target_user.save()
-        return target_user
-    return TargetUser.create(user_id=admin_id, target_id=target_id)
-
-
-def __get_or_create_target_channel(admin_id: int, channel_id: int) -> TargetChannel:
-    target_channel = TargetChannel.get_or_none(TargetChannel.user_id == admin_id)
-    if target_channel is not None:
-        target_channel.channel_id = channel_id
-        target_channel.save()
-        return target_channel
-    return TargetChannel.create(user_id=admin_id, channel_id=channel_id)
-
-
-def __create_or_set_custom_posts_limit(user_id: int, channel_id: int, posts_limit: int) -> CustomUserPostsLimit:
-    limit = CustomUserPostsLimit.get_or_none(CustomUserPostsLimit.user_id == user_id,
-                                             CustomUserPostsLimit.channel_id == channel_id)
-    if limit is not None:
-        limit.limit = posts_limit
-        limit.save()
-        return limit
-    return CustomUserPostsLimit.create(user_id=user_id, channel_id=channel_id, limit=posts_limit)
-
-
-def __get_votes_amount_in_all_channels(user_id: int, vote_type: int) -> dict:
-    """:returns dict with key = channel title, value = votes amount"""
-    result = {}
-    channels = Channel.select()
-    for channel in channels:
-        result[channel.title] = Vote.select().where(Vote.user_id == user_id,
-                                                    Vote.channel_id == channel.id,
-                                                    Vote.type == vote_type).count()
-    return result

@@ -13,14 +13,7 @@ def send_channel_id(msg: Message):
 @exception_handler
 @users.admin_required
 def send_channels_list(msg: Message):
-    result_text = ""
-    for channel in channels.get_all():
-        result_text += f"{channel.title}: {channel.id}\n"
-    if result_text:
-        bot.send_message(msg.chat.id, result_text)
-    else:
-        bot.send_message(msg.chat.id, "Пока что нет добавленных каналов.\n"
-                                      "/add_channel <id> <title> - добавить новый.")
+    channels.send_channels_list(msg)
 
 
 @bot.message_handler(commands=['add_channel'])

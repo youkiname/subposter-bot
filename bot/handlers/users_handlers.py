@@ -1,7 +1,19 @@
 from bot import bot
 from telebot.types import Message
-from bot.controllers import users
+from bot.controllers import users, user_settings
 from bot.middleware import exception_handler
+
+
+@bot.message_handler(regexp="\/profile|Профиль")
+@exception_handler
+def send_profile_info(msg: Message):
+    users.send_profile_info(msg)
+
+
+@bot.message_handler(commands=['settings'])
+@exception_handler
+def send_profile_info(msg: Message):
+    user_settings.send_user_settings_panel(msg)
 
 
 @bot.message_handler(commands=['change_rating'])

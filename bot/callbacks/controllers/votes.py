@@ -1,41 +1,8 @@
 from telebot.types import CallbackQuery
 from bot import bot
-from bot.controllers import keyboards, users
+from bot.controllers import keyboards
 from models import Vote, VoteTypes
-
-
-def __get_votes_count(channel_id: int, post_id: int, vote_type: int) -> int:
-    return Vote.select().where(Vote.post_id == post_id, Vote.channel_id == channel_id, Vote.type == vote_type).count()
-
-
-def __get_likes_count(channel_id: int, post_id: int) -> int:
-    return __get_votes_count(channel_id, post_id, VoteTypes.like)
-
-
-def __get_dislikes_count(channel_id: int, post_id: int) -> int:
-    return __get_votes_count(channel_id, post_id, VoteTypes.dislike)
-
-
-def __update_post_creator_rating(previous_vote: Vote, new_vote: Vote, user_id: int):
-    if previous_vote is None:
-        if new_vote.type == VoteTypes.like:
-            users.try_change_rating_by_id(user_id, offset=1)
-        else:
-            users.try_change_rating_by_id(user_id, offset=-1)
-        return
-
-    if previous_vote.type == VoteTypes.like and new_vote.type == VoteTypes.dislike:
-        users.try_change_rating_by_id(user_id, offset=-2)
-        return
-    if previous_vote.type == VoteTypes.dislike and new_vote.type == VoteTypes.like:
-        users.try_change_rating_by_id(user_id, offset=2)
-
-
-def __update_post_keyboard(channel_id: int, post_id: int):
-    likes_count = __get_likes_count(channel_id, post_id)
-    dislikes_count = __get_dislikes_count(channel_id, post_id)
-    keyboard = keyboards.get_post_keyboard(likes_count, dislikes_count)
-    bot.edit_message_reply_markup(channel_id, post_id, reply_markup=keyboard)
+from bot.services import users as user_services
 
 
 def process_vote(call: CallbackQuery):
@@ -69,3 +36,39 @@ def process_vote(call: CallbackQuery):
     __update_post_keyboard(channel_id, post_id)
 
     bot.answer_callback_query(call.id, "Success", cache_time=5)
+
+
+def __get_votes_count(channel_id: int, post_id: int, vote_type: int) -> int:
+    return Vote.select().where(Vote.post_id == post_id, Vote.channel_id == channel_id, Vote.type == vote_type).count()
+
+
+def __get_likes_count(channel_id: int, post_id: int) -> int:
+    return __get_votes_count(channel_id, post_id, VoteTypes.like)
+
+
+def __get_dislikes_count(channel_id: int, post_id: int) -> int:
+    return __get_votes_count(channel_id, post_id, VoteTypes.dislike)
+
+
+def __update_post_creator_rating(previous_vote: Vote or None, new_vote: Vote, user_id: int):
+    if previous_vote is None:
+        if new_vote.type == VoteTypes.like:
+            user_services.change_rating_by_id(user_id, offset=1)
+        else:
+            user_services.change_rating_by_id(user_id, offset=-1)
+        return
+
+    if previous_vote.type == VoteTypes.like and new_vote.type == VoteTypes.dislike:
+        user_services.change_rating_by_id(user_id, offset=-2)
+        return
+    if previous_vote.type == VoteTypes.dislike and new_vote.type == VoteTypes.like:
+        user_services.change_rating_by_id(user_id, offset=2)
+
+
+def __update_post_keyboard(channel_id: int, post_id: int):
+    likes_count = __get_likes_count(channel_id, post_id)
+    dislikes_count = __get_dislikes_count(channel_id, post_id)
+    keyboard = keyboards.get_post_keyboard(likes_count, dislikes_count)
+    bot.edit_message_reply_markup(channel_id, post_id, reply_markup=keyboard)
+
+
