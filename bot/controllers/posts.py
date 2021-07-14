@@ -1,14 +1,16 @@
-from bot import bot
-from bot.controllers import users, keyboards
 from telebot import types
-from models import User, PostData, Channel, MediaTypes
+
+from bot import bot
+from bot.controllers import keyboards
+from bot.services import channels as channel_services
 from bot.services import posts as post_services
 from bot.services import users as user_services
 from bot.services.user_states import UserStates
+from models import User, PostData, MediaTypes
 
 
 def start_post_creating(msg: types.Message):
-    user = users.get_or_create_user(msg.from_user)
+    user = user_services.create_or_update_user(msg.from_user)
     user.state = UserStates.CHANNEL_CHOOSING
     user.save()
     bot.send_message(msg.chat.id, "Начал создание поста. Выбери канал.",
@@ -16,7 +18,7 @@ def start_post_creating(msg: types.Message):
 
 
 def continue_post_creating(msg: types.Message):
-    user = users.get_or_create_user(msg.from_user)
+    user = user_services.create_or_update_user(msg.from_user)
     if user.state == UserStates.CHANNEL_CHOOSING:
         __try_choose_channel(msg, user)
         return
@@ -29,7 +31,7 @@ def continue_post_creating(msg: types.Message):
 
 
 def __try_choose_channel(msg: types.Message, user: User):
-    channel = Channel.get_or_none(title=msg.text)
+    channel = channel_services.get_by_title(msg.text)
     if channel is None:
         bot.send_message(msg.chat.id, "Такой канал не зарегистрирован.\n"
                                       "Выбери канал, нажав на нужную кнопку.")
@@ -42,8 +44,8 @@ def __try_choose_channel(msg: types.Message, user: User):
     if not post_services.check_posts_limit(user.id, channel.id):
         bot.send_message(msg.chat.id, "У вас достиг суточный лимит постов на этом канале.")
         return
-
-    PostData.create(creator_id=user.id, channel_id=channel.id).save()
+    
+    post_services.create_post_data(user.id, channel.id)
 
     user.state = UserStates.POST_CREATING
     user.save()
@@ -54,7 +56,7 @@ def __try_choose_channel(msg: types.Message, user: User):
 
 
 def __set_new_data_to_post(msg: types.Message, user: User):
-    post_data = PostData.get(PostData.creator_id == user.id)
+    post_data = post_services.get_post_data_by_creator_id(user.id)
 
     post_services.replace_text(post_data, msg)
 
@@ -75,11 +77,11 @@ def __check_post_data_validity(chat_id: int, post_data: PostData) -> bool:
 
 
 def __try_send_post(msg: types.Message, user: User):
-    post_data = PostData.get(PostData.creator_id == user.id)
+    post_data = post_services.get_post_data_by_creator_id(user.id)
     if not __check_post_data_validity(msg.chat.id, post_data):
         return
 
-    telegram_message = post_services.send_post(post_data.channel_id, post_data)
+    telegram_message = __send_post(post_data.channel_id, post_data)
     post_services.save_post(post_data, telegram_message.message_id)
 
     post_data.delete_instance()
@@ -91,7 +93,29 @@ def __try_send_post(msg: types.Message, user: User):
 
 def __try_send_preview(msg: types.Message, user: User):
     """Preview is a post without keyboard. Creator can check post appearance before sending."""
-    post_data = PostData.get(PostData.creator_id == user.id)
+    post_data = post_services.get_post_data_by_creator_id(user.id)
     if not __check_post_data_validity(msg.chat.id, post_data):
         return
-    post_services.send_post(msg.chat.id, post_data, as_preview=True)
+    __send_post(msg.chat.id, post_data, as_preview=True)
+
+
+def __send_post(chat_id: int, post_data: PostData, as_preview=False):
+    """This func is used for preview and sending posts to the channels.
+       If is_preview is True post will be sent without keyboard."""
+    caption = post_data.text
+    user_sign = user_services.get_user_sign(post_data.creator_id)
+    keyboard = None
+    if not as_preview:
+        keyboard = keyboards.get_post_keyboard()
+    if user_sign:
+        caption += "\n" + user_sign
+    if post_data.type == MediaTypes.photo:
+        return bot.send_photo(chat_id, post_data.media[0].media_id, caption=caption, reply_markup=keyboard,
+                              parse_mode='HTML')
+    if post_data.type == MediaTypes.animation:
+        return bot.send_animation(chat_id, post_data.media[0].media_id, caption=caption, reply_markup=keyboard,
+                                  parse_mode='HTML')
+    if post_data.type == MediaTypes.video:
+        return bot.send_video(chat_id, post_data.media[0].media_id,
+                              caption=caption, reply_markup=keyboard, supports_streaming=True,
+                              parse_mode='HTML')

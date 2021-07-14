@@ -1,8 +1,9 @@
 from telebot.types import Message
-from bot.services import users as user_services
-from bot.services import posts as post_services
+
 from bot import bot
 from bot.controllers import keyboards
+from bot.services import posts as post_services
+from bot.services import users as user_services
 
 
 def process_cancel(msg: Message):

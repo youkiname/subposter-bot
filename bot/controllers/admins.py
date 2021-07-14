@@ -1,7 +1,8 @@
-from bot import bot
 from telebot.types import Message
-from models import Admin
+
+from bot import bot
 from bot.utils import MessageTextSplitter
+from models import Admin
 
 
 def try_add_new_admin(msg: Message):

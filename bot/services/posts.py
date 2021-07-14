@@ -1,9 +1,9 @@
-from bot import bot
-from bot.controllers import keyboards
-from telebot.types import Message
-from models import PostData, MediaTypes, PostDataMedia, Post
-from bot.services import users as user_services
 import html
+
+from telebot.types import Message
+
+from bot.services import users as user_services
+from models import PostData, MediaTypes, PostDataMedia, Post
 
 
 def check_posts_limit(user_id: int, channel_id: int) -> bool:
@@ -13,26 +13,12 @@ def check_posts_limit(user_id: int, channel_id: int) -> bool:
     return post_limit > sent_posts_amount
 
 
-def send_post(chat_id: int, post_data: PostData, as_preview=False):
-    """This func is used for preview and sending posts to the channels.
-       If is_preview is True post will be sent without keyboard."""
-    caption = post_data.text
-    user_sign = user_services.get_user_sign(post_data.creator_id)
-    keyboard = None
-    if not as_preview:
-        keyboard = keyboards.get_post_keyboard()
-    if user_sign:
-        caption += "\n" + user_sign
-    if post_data.type == MediaTypes.photo:
-        return bot.send_photo(chat_id, post_data.media[0].media_id, caption=caption, reply_markup=keyboard,
-                              parse_mode='HTML')
-    if post_data.type == MediaTypes.animation:
-        return bot.send_animation(chat_id, post_data.media[0].media_id, caption=caption, reply_markup=keyboard,
-                                  parse_mode='HTML')
-    if post_data.type == MediaTypes.video:
-        return bot.send_video(chat_id, post_data.media[0].media_id,
-                              caption=caption, reply_markup=keyboard, supports_streaming=True,
-                              parse_mode='HTML')
+def create_post_data(user_id: int, channel_id: int) -> PostData:
+    return PostData.create(creator_id=user_id, channel_id=channel_id)
+
+
+def get_post_data_by_creator_id(user_id: int) -> PostData:
+    return PostData.get(PostData.creator_id == user_id)
 
 
 def replace_text(post_data: PostData, msg: Message):

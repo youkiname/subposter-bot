@@ -1,7 +1,8 @@
 from telebot import types
-from models import Channel, UserSettings
+
 from bot.callbacks import CallbackCommands
-from models import VoteTypes
+from bot.services import channels as channel_services
+from models import UserSettings, VoteTypes
 
 
 def get_main_keyboard() -> types.ReplyKeyboardMarkup:
@@ -25,7 +26,7 @@ def get_cancel() -> types.ReplyKeyboardMarkup:
 
 def get_channels() -> types.ReplyKeyboardMarkup:
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    for channel in Channel.select():
+    for channel in channel_services.get_all():
         if not channel.frozen:
             markup.add(
                 types.KeyboardButton(channel.title)

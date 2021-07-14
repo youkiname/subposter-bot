@@ -1,10 +1,10 @@
 from telebot import types
 
 from bot import bot
+from bot.services import channels as channel_services
 from bot.services import users as user_services
 from bot.services.user_states import UserStates
 from bot.utils import MessageTextSplitter
-from models import User, TargetUser, TargetChannel
 
 
 def superuser_required(handler):
@@ -28,13 +28,13 @@ def admin_required(handler):
 
 
 def send_profile_info(msg: types.Message):
-    user = get_or_create_user(msg.from_user)
+    user = user_services.create_or_update_user(msg.from_user)
     info = user_services.get_profile_info(user)
     bot.send_message(msg.chat.id, info)
 
 
 def start_rating_change(msg: types.Message):
-    admin = get_or_create_user(msg.from_user)
+    admin = user_services.create_or_update_user(msg.from_user)
     user = MessageTextSplitter.try_get_user_from_message_text(msg)
     if not user:
         return
@@ -50,8 +50,8 @@ def start_rating_change(msg: types.Message):
 
 
 def continue_rating_change(msg: types.Message):
-    admin = get_or_create_user(msg.from_user)
-    temp_target_user_data = TargetUser.get_or_none(TargetUser.user_id == admin.id)
+    admin = user_services.create_or_update_user(msg.from_user)
+    temp_target_user_data = user_services.get_target_user_by_id(admin.id)
     if temp_target_user_data is None:
         bot.send_message(msg.chat.id, "Пользователь не выбран. Попробуйте ещё раз.\n"
                                       "/change_rating")
@@ -62,7 +62,7 @@ def continue_rating_change(msg: types.Message):
         return
     rating_offset = int(msg.text)
 
-    target_user = User.get_by_id(temp_target_user_data.target_id)
+    target_user = user_services.get_by_id(temp_target_user_data.target_id)
     target_user.rating += rating_offset
 
     user_services.clear_state(admin)
@@ -74,7 +74,7 @@ def continue_rating_change(msg: types.Message):
 
 
 def start_daily_post_limit_change(msg: types.Message):
-    admin = get_or_create_user(msg.from_user)
+    admin = user_services.create_or_update_user(msg.from_user)
     user = MessageTextSplitter.try_get_user_from_message_text(msg)
     channel = MessageTextSplitter.try_get_channel_from_message_text(msg)
     if not user or not channel:
@@ -96,9 +96,9 @@ def start_daily_post_limit_change(msg: types.Message):
 
 
 def continue_daily_post_limit_change(msg: types.Message):
-    admin = get_or_create_user(msg.from_user)
-    temp_target_user_data = TargetUser.get_or_none(TargetUser.user_id == admin.id)
-    temp_target_channel_data = TargetChannel.get_or_none(TargetChannel.user_id == admin.id)
+    admin = user_services.create_or_update_user(msg.from_user)
+    temp_target_user_data = user_services.get_target_user_by_id(admin.id)
+    temp_target_channel_data = channel_services.get_target_channel_by_user_id(admin.id)
     if temp_target_user_data is None or temp_target_channel_data is None:
         bot.send_message(msg.chat.id, "Пользователь или канал не выбран. Попробуйте ещё раз.\n"
                                       "/change_post_limit")
@@ -120,38 +120,15 @@ def continue_daily_post_limit_change(msg: types.Message):
 
 
 def is_user_creating_post(msg: types.Message) -> bool:
-    user = get_or_create_user(msg.from_user)
+    user = user_services.create_or_update_user(msg.from_user)
     return user.state in [UserStates.POST_CREATING, UserStates.CHANNEL_CHOOSING]
 
 
 def is_admin_on_rating_change_state(msg: types.Message) -> bool:
-    admin = get_or_create_user(msg.from_user)
+    admin = user_services.create_or_update_user(msg.from_user)
     return admin.state == UserStates.RATING_CHANGE
 
 
 def is_admin_on_daily_posts_limit_change_state(msg: types.Message) -> bool:
-    admin = get_or_create_user(msg.from_user)
+    admin = user_services.create_or_update_user(msg.from_user)
     return admin.state == UserStates.DAILY_POST_LIMIT_CHANGE
-
-
-def get_or_create_user(from_user: types.User) -> User:
-    db_user = User.get_or_none(id=from_user.id)
-    if db_user is None:
-        db_user = User.create(id=from_user.id, username=from_user.username,
-                              first_name=from_user.first_name, last_name=from_user.last_name)
-        db_user.save()
-        return db_user
-    is_user_changed = False
-    if db_user.username != from_user.username:
-        db_user.username = from_user.username
-        is_user_changed = True
-    if db_user.first_name != from_user.first_name:
-        db_user.username = from_user.username
-        is_user_changed = True
-    if db_user.last_name != from_user.last_name:
-        db_user.last_name = from_user.last_name
-        is_user_changed = True
-
-    if is_user_changed:
-        db_user.save()
-    return db_user

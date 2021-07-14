@@ -8,6 +8,29 @@ from models import (User, UserSettings, Admin, Post,
                     TargetChannel, TargetUser)
 
 
+def create_or_update_user(from_user) -> User:
+    db_user = User.get_or_none(id=from_user.id)
+    if db_user is None:
+        db_user = User.create(id=from_user.id, username=from_user.username,
+                              first_name=from_user.first_name, last_name=from_user.last_name)
+        db_user.save()
+        return db_user
+    is_user_changed = False
+    if db_user.username != from_user.username:
+        db_user.username = from_user.username
+        is_user_changed = True
+    if db_user.first_name != from_user.first_name:
+        db_user.username = from_user.username
+        is_user_changed = True
+    if db_user.last_name != from_user.last_name:
+        db_user.last_name = from_user.last_name
+        is_user_changed = True
+
+    if is_user_changed:
+        db_user.save()
+    return db_user
+
+
 def get_or_create_settings(user_id: int) -> UserSettings:
     settings, created = UserSettings.get_or_create(id=user_id)
     return settings
@@ -115,6 +138,10 @@ def clear_state(user: User):
     user.save()
 
 
+def get_by_id(user_id: int) -> User:
+    return User.get_by_id(user_id)
+
+
 def get_daily_posts_limit(user_id: int, channel_id: int) -> int:
     custom_posts_limit = CustomUserPostsLimit.get_or_none(
         CustomUserPostsLimit.user_id == user_id,
@@ -142,6 +169,10 @@ def get_or_create_target_channel(admin_id: int, channel_id: int) -> TargetChanne
         target_channel.save()
         return target_channel
     return TargetChannel.create(user_id=admin_id, channel_id=channel_id)
+
+
+def get_target_user_by_id(user_id: int) -> TargetUser:
+    return TargetUser.get_or_none(TargetUser.user_id == user_id)
 
 
 def create_or_set_custom_posts_limit(user_id: int, channel_id: int, posts_limit: int) -> CustomUserPostsLimit:
