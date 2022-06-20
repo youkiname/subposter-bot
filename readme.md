@@ -2,6 +2,7 @@
 This telegram bot allows subscribers to create their own posts on your channel; or sent posts to the special moderated
 channel to confirm it. 
 For now interface is only in russian.
+Feedback: https://t.me/tolaptik
 
 # Features
 - Supporting photo, animation and video post types.
