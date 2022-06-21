@@ -1,7 +1,7 @@
 from telebot.types import CallbackQuery
 from bot import bot
 from bot.controllers import keyboards
-from models import Vote, VoteTypes
+from models import Vote, VoteTypes, Post
 from bot.services import users as user_services
 
 
@@ -24,8 +24,7 @@ def process_vote(call: CallbackQuery):
         bot.answer_callback_query(call.id, f"Already {VoteTypes.to_text(new_vote.type)}",
                                   cache_time=2)
         return
-
-    __update_post_creator_rating(previous_vote, new_vote, user_id)
+    __update_post_creator_rating(previous_vote, new_vote, post_id)
 
     if previous_vote is None:
         new_vote.save()
@@ -50,7 +49,9 @@ def __get_dislikes_count(channel_id: int, post_id: int) -> int:
     return __get_votes_count(channel_id, post_id, VoteTypes.dislike)
 
 
-def __update_post_creator_rating(previous_vote: Vote or None, new_vote: Vote, user_id: int):
+def __update_post_creator_rating(previous_vote: Vote or None, new_vote: Vote, post_id: int):
+    post = Post.get(Post.id == post_id)
+    user_id = post.creator_id
     if previous_vote is None:
         if new_vote.type == VoteTypes.like:
             user_services.change_rating_by_id(user_id, offset=1)
@@ -70,5 +71,3 @@ def __update_post_keyboard(channel_id: int, post_id: int):
     dislikes_count = __get_dislikes_count(channel_id, post_id)
     keyboard = keyboards.get_post_keyboard(likes_count, dislikes_count)
     bot.edit_message_reply_markup(channel_id, post_id, reply_markup=keyboard)
-
-
