@@ -1,3 +1,5 @@
+import html
+
 from telebot import types
 
 from bot import bot
@@ -59,7 +61,7 @@ def __set_new_data_to_post(msg: types.Message, user: User):
     post_data = post_services.get_post_data_by_creator_id(user.id)
 
     if msg.text or msg.caption:
-        formatted_text = post_services.FormattedMessageTextData(msg.text, msg.caption, msg.entities)
+        formatted_text = post_services.FormattedMessageTextData(html.escape(msg.text), msg.caption, msg.entities)
         post_services.replace_text(post_data, formatted_text)
 
     if msg.content_type not in ['text', MediaTypes.album]:

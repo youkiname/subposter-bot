@@ -1,5 +1,3 @@
-import html
-
 from telebot.types import Message
 
 from bot.services import users as user_services
@@ -50,6 +48,7 @@ class FormattedMessageTextData:
                 template = html_tags_templates[entity.type].format(entity_text)
             global_offset += len(template) - len(entity_text)
             self.text = "".join((self.text[:start], template, self.text[end:]))
+        self.__formatted_text = self.text
 
 
 def check_posts_limit(user_id: int, channel_id: int) -> bool:
@@ -68,7 +67,7 @@ def get_post_data_by_creator_id(user_id: int) -> PostData:
 
 
 def replace_text(post_data: PostData, formatted_text_data: FormattedMessageTextData):
-    post_data.text = html.escape(formatted_text_data.get_text())
+    post_data.text = formatted_text_data.get_text()
 
 
 def replace_existing_media_data(post_data: PostData, msg: Message):
