@@ -42,3 +42,10 @@ def freeze_channel(msg: Message):
 @users.admin_required
 def unfreeze_channel(msg: Message):
     channels.process_channel_freezing(msg, channels.ChannelStatusAction.unfreeze)
+
+
+@bot.message_handler(commands=['change_channel_post_limit'])
+@exception_handler
+@users.superuser_required
+def change_channel_post_limit(msg: Message):
+    channels.process_post_limit_changing(msg)

@@ -10,5 +10,5 @@ def __is_votes_command(call: CallbackQuery):
 
 @bot.callback_query_handler(func=__is_votes_command)
 @callback_exception_handler
-def sign_change_handler(call: CallbackQuery):
+def votes_handler(call: CallbackQuery):
     votes.process_vote(call)
