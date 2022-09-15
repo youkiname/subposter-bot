@@ -18,7 +18,8 @@ class ChannelStatusAction:
 def send_channels_list(msg: Message):
     result_text = ""
     for channel in channel_services.get_all():
-        result_text += f"{channel.title} <{channel.id}>\n"
+        post_limit = channel_services.get_or_create_post_limit(channel.id)
+        result_text += f"{channel.title} <{channel.id}> Limit: {post_limit.limit}\n"
     if result_text:
         bot.send_message(msg.chat.id, result_text)
     else:
@@ -61,6 +62,21 @@ def process_channel_freezing(msg: Message, status: bool):
     channel.frozen = status
     channel.save()
     bot.send_message(msg.chat.id, f"Канал {channel.title}<{channel.id}> {ChannelStatusAction.to_text(status)}.")
+
+
+def process_post_limit_changing(msg: Message):
+    channel_title = __try_get_channel_title(msg)
+    if channel_title is None:
+        return
+    channel = channel_services.get_by_title(channel_title)
+    if channel is None:
+        bot.send_message(msg.chat.id, "Канал с таким именем не существует.\n/channels - список каналов")
+        return
+    new_limit = int(msg.text.split(' ')[2])
+    post_limit = channel_services.get_or_create_post_limit(channel.id)
+    post_limit.limit = new_limit
+    post_limit.save()
+    bot.send_message(msg.chat.id, f"Канал {channel.title}<{channel.id}>. Текущий лимит: {post_limit.limit}")
 
 
 def __try_get_channel_data(msg: Message) -> (int, str) or None:
