@@ -64,7 +64,7 @@ def __set_new_data_to_post(msg: types.Message, user: User):
         formatted_text = post_services.FormattedMessageTextData(html.escape(msg.text), msg.caption, msg.entities)
         post_services.replace_text(post_data, formatted_text)
 
-    if msg.content_type not in ['text', MediaTypes.album]:
+    if msg.content_type != 'text':
         post_services.replace_existing_media_data(post_data, msg)
 
     post_data.save()

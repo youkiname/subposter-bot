@@ -8,8 +8,14 @@ SUPER_ADMIN_USERNAME = "superuser"
 
 # Peewee database connection documentation
 # http://docs.peewee-orm.com/en/latest/peewee/database.html
-db = PostgresqlDatabase(config.DB_NAME, user=config.DB_USER, password=config.DB_PASSWORD,
-                        host=config.DB_HOST, port=config.DB_PORT)
+db = None
+if config.DB_DRIVE == "sqlite":
+    db = SqliteDatabase(config.DB_NAME, pragmas={'journal_mode': 'wal'})
+else:
+    db = PostgresqlDatabase(config.DB_NAME, user=config.DB_USER,
+                            password=config.DB_PASSWORD,
+                            host=config.DB_HOST,
+                            port=config.DB_PORT)
 
 
 class BaseModel(Model):
