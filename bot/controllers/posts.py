@@ -8,7 +8,7 @@ from bot.services import channels as channel_services
 from bot.services import posts as post_services
 from bot.services import users as user_services
 from bot.services.user_states import UserStates
-from models import User, PostData, MediaTypes
+from models import User, PostData, MediaTypes, PostDataMedia
 
 
 def start_post_creating(msg: types.Message):
@@ -46,7 +46,7 @@ def __try_choose_channel(msg: types.Message, user: User):
     if not post_services.check_posts_limit(user.id, channel.id):
         bot.send_message(msg.chat.id, "У вас достиг суточный лимит постов на этом канале.")
         return
-    
+
     post_services.create_post_data(user.id, channel.id)
 
     user.state = UserStates.POST_CREATING
@@ -68,6 +68,9 @@ def __set_new_data_to_post(msg: types.Message, user: User):
         post_services.replace_existing_media_data(post_data, msg)
 
     post_data.save()
+    album_spam_block = post_data.type == 'album' and len(post_data.media) > 1
+    if album_spam_block:
+        return
     bot.send_message(msg.chat.id, f"Принял {msg.content_type}. Можешь отправить текст, картинку, "
                                   f"видео или гифку, чтобы добавить/изменить содержание поста.\n"
                                   f"Нажми Превью, чтобы посмотреть, как будет выглядеть пост на канале.")
@@ -123,3 +126,6 @@ def __send_post(chat_id: int, post_data: PostData, as_preview=False):
         return bot.send_video(chat_id, post_data.media[0].media_id,
                               caption=caption, reply_markup=keyboard, supports_streaming=True,
                               parse_mode='HTML')
+    if post_data.type == MediaTypes.album:
+        bot.send_media_group(chat_id, post_services.collect_photo_list(post_data))
+        return bot.send_message(chat_id, text=post_data.text or "↑↑↑", reply_markup=keyboard, parse_mode='HTML')

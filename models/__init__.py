@@ -10,7 +10,7 @@ SUPER_ADMIN_USERNAME = "superuser"
 # http://docs.peewee-orm.com/en/latest/peewee/database.html
 db = None
 if config.DB_DRIVE == "sqlite":
-    db = SqliteDatabase(config.DB_NAME, pragmas={'journal_mode': 'wal'})
+    db = SqliteDatabase(config.DB_NAME, pragmas={'journal_mode': 'wal', 'foreign_keys': True})
 else:
     db = PostgresqlDatabase(config.DB_NAME, user=config.DB_USER,
                             password=config.DB_PASSWORD,
@@ -118,8 +118,10 @@ class PostData(BaseModel):
 class PostDataMedia(BaseModel):
     """Photo, video, animation or few photos for album."""
     id = AutoField()
-    type = CharField()  # one of the MediaTypes except of album
+    message_id = BigIntegerField(null=True)  # used to sort photos in album due to async receiving
+    type = CharField()  # one of the MediaTypes
     post_data_id = ForeignKeyField(PostData, on_delete="CASCADE", backref="media")
+    media_group_id = CharField(null=True)  # only for albums
     media_id = CharField()
 
 

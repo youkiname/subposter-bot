@@ -1,4 +1,4 @@
-from telebot.types import Message
+from telebot.types import Message, InputMediaPhoto
 
 from bot.services import users as user_services
 from models import PostData, MediaTypes, PostDataMedia, Post
@@ -72,6 +72,9 @@ def replace_text(post_data: PostData, formatted_text_data: FormattedMessageTextD
 
 def replace_existing_media_data(post_data: PostData, msg: Message):
     """User can send another photo while post creating. Caption will be saved, but post will get new image."""
+    if msg.content_type == MediaTypes.album:
+        __replace_album_media_data(post_data, msg)
+        return
     __remove_media_data(post_data)
     if msg.content_type == MediaTypes.photo:
         __attach_photo_to_post(post_data, msg.photo[-1].file_id)
@@ -91,6 +94,14 @@ def delete_temp_post_data(user_id: int):
     PostData.delete().where(PostData.creator_id == user_id).execute()
 
 
+def collect_photo_list(post_data: PostData) -> list:
+    """Collect list of InputMediaPhoto for sending media group post"""
+    media = PostDataMedia.select().where(PostDataMedia.post_data_id == post_data.id,
+                                         PostDataMedia.media_group_id == post_data.media_group_id)
+    media = sorted(media, key=lambda photo: photo.message_id)
+    return [InputMediaPhoto(photo.media_id) for photo in media]
+
+
 def __is_post_data_valid_for_sending(post_data: PostData) -> bool:
     """If post data type was initialized User already send allowed media. This is enough to create post."""
     return post_data.type is not None
@@ -98,6 +109,16 @@ def __is_post_data_valid_for_sending(post_data: PostData) -> bool:
 
 def __remove_media_data(post_data: PostData):
     PostDataMedia.delete().where(PostDataMedia.post_data_id == post_data.id).execute()
+
+
+def __replace_album_media_data(post_data: PostData, msg: Message):
+    post_data.media_group_id = msg.media_group_id
+    post_data.type = MediaTypes.album
+    PostDataMedia.create(type=MediaTypes.album,
+                         message_id=msg.message_id,
+                         post_data_id=post_data.id,
+                         media_id=msg.photo[-1].file_id,
+                         media_group_id=msg.media_group_id)
 
 
 def __attach_photo_to_post(post_data: PostData, photo_id):

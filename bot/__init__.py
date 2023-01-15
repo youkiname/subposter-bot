@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
 import telebot
 
 from config import config
-import logging
 
 telebot.logger.setLevel(logging.INFO)
 
