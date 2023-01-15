@@ -142,4 +142,3 @@ Admin required.
 # TODO
 - English translation
 - Moderated channel
-- Change default channel daily posts limit.
