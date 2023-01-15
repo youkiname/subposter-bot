@@ -9,7 +9,7 @@ SUPER_ADMIN_USERNAME = "superuser"
 # Peewee database connection documentation
 # http://docs.peewee-orm.com/en/latest/peewee/database.html
 db = None
-if config.DB_DRIVE == "sqlite":
+if config.DB_DRIVER == "sqlite":
     db = SqliteDatabase(config.DB_NAME, pragmas={'journal_mode': 'wal', 'foreign_keys': True})
 else:
     db = PostgresqlDatabase(config.DB_NAME, user=config.DB_USER,

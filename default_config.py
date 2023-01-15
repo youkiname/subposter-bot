@@ -10,10 +10,10 @@ class Configuration:
     WEBHOOK_URL = "/bot/"
     POLLING_USING = True
 
-    # DB_DRIVE = 'sqlite' or 'postgres'.
+    # DB_DRIVER = 'sqlite' or 'postgres'.
     # Sqlite requires only DB_NAME. Postgres requires all fields below.
     # You also can use MySQL and CockroachDB with customizing models/__init__.py
-    DB_DRIVE = "sqlite"
+    DB_DRIVER = "sqlite"
     DB_HOST = ""
     DB_PORT = ""
     DB_NAME = ""
