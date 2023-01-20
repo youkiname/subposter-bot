@@ -93,6 +93,8 @@ class Channel(BaseModel):
     title = CharField(unique=True)
     link = CharField(default="")
     frozen = BooleanField(default=False)
+    # If you try update post keyboard too frequently telegram api raises an 429 exception.
+    markup_updating_limit = IntegerField(default=0)
 
 
 class MediaTypes:

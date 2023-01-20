@@ -1,8 +1,12 @@
+import time
+
+from telebot.apihelper import ApiTelegramException
 from telebot.types import CallbackQuery
+
 from bot import bot
 from bot.controllers import keyboards
-from models import Vote, VoteTypes, Post
 from bot.services import users as user_services
+from models import Vote, VoteTypes, Post, Channel
 
 
 def process_vote(call: CallbackQuery):
@@ -67,7 +71,18 @@ def __update_post_creator_rating(previous_vote: Vote or None, new_vote: Vote, po
 
 
 def __update_post_keyboard(channel_id: int, post_id: int):
+    channel = Channel.get_by_id(channel_id)
+    if channel.markup_updating_limit > time.time():
+        # can't update keyboard. Telegram api prevents flood.
+        return
     likes_count = __get_likes_count(channel_id, post_id)
     dislikes_count = __get_dislikes_count(channel_id, post_id)
     keyboard = keyboards.get_post_keyboard(likes_count, dislikes_count)
-    bot.edit_message_reply_markup(channel_id, post_id, reply_markup=keyboard)
+    try:
+        bot.edit_message_reply_markup(channel_id, post_id, reply_markup=keyboard)
+    except ApiTelegramException as e:
+        if e.error_code != 429:
+            raise e
+        delay = 7
+        channel.markup_updating_limit = int(time.time()) + delay
+        channel.save()
