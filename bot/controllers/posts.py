@@ -128,4 +128,4 @@ def __send_post(chat_id: int, post_data: PostData, as_preview=False):
                               parse_mode='HTML')
     if post_data.type == MediaTypes.album:
         bot.send_media_group(chat_id, post_services.collect_photo_list(post_data))
-        return bot.send_message(chat_id, text=post_data.text or "↑↑↑", reply_markup=keyboard, parse_mode='HTML')
+        return bot.send_message(chat_id, text=caption or "↑↑↑", reply_markup=keyboard, parse_mode='HTML')
