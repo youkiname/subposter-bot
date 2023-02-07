@@ -119,7 +119,7 @@ def get_likes_amount_in_all_channels(user_id: int) -> dict:
 
 def get_dislikes_amount_in_all_channels(user_id: int) -> dict:
     """:returns dict with key = channel title, value = dislikes amount"""
-    return __get_votes_amount_in_all_channels(user_id, VoteTypes.like)
+    return __get_votes_amount_in_all_channels(user_id, VoteTypes.dislike)
 
 
 def change_rating_by_id(user_id: int, offset: int):

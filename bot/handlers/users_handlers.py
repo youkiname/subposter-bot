@@ -12,7 +12,7 @@ def send_profile_info(msg: Message):
 
 @bot.message_handler(commands=['settings'])
 @exception_handler
-def send_profile_info(msg: Message):
+def send_user_settings_panel(msg: Message):
     user_settings.send_user_settings_panel(msg)
 
 
