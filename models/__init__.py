@@ -38,6 +38,14 @@ class User(BaseModel):
         database = db
         table_name = 'users'
 
+    def get_full_name(self):
+        result = self.first_name
+        if self.last_name:
+            result += ' ' + self.last_name
+        if self.username:
+            result += f' @{self.username}'
+        return f"{result} <{self.id}>"
+
 
 class TargetUser(BaseModel):
     """This model is used to save temp user_id while
@@ -130,8 +138,8 @@ class PostDataMedia(BaseModel):
 class Post(BaseModel):
     """Post was sent to a channel."""
     id = AutoField()
-    creator_id = BigIntegerField(index=True)
-    channel_id = BigIntegerField()
+    creator = ForeignKeyField(User, backref='posts', index=True)
+    channel = ForeignKeyField(Channel, backref='posts')
     type = CharField()  # one of the MediaTypes
     text = CharField(max_length=4096, default="")
     created_at = TimestampField(default=time.time)

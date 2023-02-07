@@ -7,8 +7,18 @@ from bot.controllers import keyboards
 from bot.services import channels as channel_services
 from bot.services import posts as post_services
 from bot.services import users as user_services
+from bot.services import votes as votes_services
 from bot.services.user_states import UserStates
-from models import User, PostData, MediaTypes, PostDataMedia
+from models import User, PostData, MediaTypes, Channel, Post
+
+
+def is_forwarded_from_channel(msg: types.Message) -> bool:
+    """Returns true if message was forwarded from saved channel.
+    if true and user is admin we can send post info"""
+    if not msg.forward_from_chat:
+        return False
+    channel = Channel.get_or_none(Channel.id == msg.forward_from_chat.id)
+    return channel is not None
 
 
 def start_post_creating(msg: types.Message):
@@ -30,6 +40,17 @@ def continue_post_creating(msg: types.Message):
         __try_send_preview(msg, user)
     else:
         __set_new_data_to_post(msg, user)
+
+
+def send_post_info(msg: types.Message):
+    post = Post.get_or_none(Post.id == msg.forward_from_message_id)
+    if not post:
+        return bot.send_message(msg.chat.id, f"Пост <{msg.message_id}> не найден")
+    info = f"Пост <{post.id}>\n" \
+           f"Создатель: {post.creator.get_full_name()}\n" \
+           f"Лайков: {votes_services.get_post_likes_amount(post.id)}\n" \
+           f"Дизлайков {votes_services.get_post_dislikes_amount(post.id)}"
+    bot.send_message(msg.chat.id, info)
 
 
 def __try_choose_channel(msg: types.Message, user: User):

@@ -21,3 +21,10 @@ def continue_post_creating(msg: Message):
 @exception_handler
 def start_post_creating(msg: Message):
     posts.start_post_creating(msg)
+
+
+@bot.message_handler(func=posts.is_forwarded_from_channel, content_types=['animation', 'video', 'photo', 'text'])
+@exception_handler
+@users.admin_required
+def send_post_info(msg: Message):
+    posts.send_post_info(msg)
