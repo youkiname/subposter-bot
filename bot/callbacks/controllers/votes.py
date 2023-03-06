@@ -1,15 +1,17 @@
 import time
 
 from telebot.apihelper import ApiTelegramException
-from telebot.types import CallbackQuery
+from telebot.types import CallbackQuery, Message
 
 from bot import bot
 from bot.controllers import keyboards
 from bot.services import users as user_services
 from models import Vote, VoteTypes, Post, Channel
+from config import config
 
 
 def process_vote(call: CallbackQuery):
+    __save_post_if_not_exists(call.message)
     user_id = call.from_user.id
     channel_id = call.message.chat.id
     post_id = call.message.message_id
@@ -39,6 +41,19 @@ def process_vote(call: CallbackQuery):
     __update_post_keyboard(channel_id, post_id)
 
     bot.answer_callback_query(call.id, "Success", cache_time=5)
+
+
+def __save_post_if_not_exists(msg: Message) -> Post:
+    """This will be useful if posts database was cleared
+    or if you use another service for creating post."""
+    post, _ = Post.get_or_create(
+        id=msg.message_id,
+        channel_id=msg.chat.id,
+        creator_id=config.SUPER_ADMIN_ID,
+        type=msg.content_type,
+        text=msg.caption or msg.text
+    )
+    return post
 
 
 def __get_votes_count(channel_id: int, post_id: int, vote_type: int) -> int:
