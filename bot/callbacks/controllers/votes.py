@@ -44,9 +44,13 @@ def process_vote(call: CallbackQuery):
 
 
 def __save_post_if_not_exists(msg: Message) -> Post:
-    """This will be useful if posts database was cleared
+    """This will be useful if posts database was dropped
     or if you use another service for creating post."""
-    post, _ = Post.get_or_create(
+    post = Post.get_or_none(Post.id == msg.message_id, Post.channel_id == msg.chat.id)
+    if post is not None:
+        return post
+    # idk Post.get_or_create() raises 'duplicate key value violates unique constraint' exception ¯\_(ツ)_/¯
+    post = Post.create(
         id=msg.message_id,
         channel_id=msg.chat.id,
         creator_id=config.SUPER_ADMIN_ID,
